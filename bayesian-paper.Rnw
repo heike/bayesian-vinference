@@ -137,7 +137,7 @@ c &=& (c_1, ..., c_m) = \text{ number of picks of each plot} \\
 p \mid x, \alpha &\sim& Dir (K, \alpha_1+c_1, \alpha_2+c_2, ..., \alpha_m + c_m)
 \end{eqnarray*}
 
-For visual inference, we are usually dealing with a null hypothesis of the form `the plot of the data is not in any way different from the null plots'.  Under this null hypothesis the vector of concentration parameters $\alpha$ has to consist of the same values, i.e.\ $\alpha_i = $const. The sum of the concentration parameters $\sum{\alpha}$ can be interpreted as the number of evaluations we allow under the null hypothesis. Jeffrey's uninformative prior \citep{jeffreys:1946} for this situation is $\alpha = \frac{1}{2}$.
+For visual inference, we are usually dealing with a null hypothesis of the form `the plot of the data is not in any way different from the null plots'.  Under this null hypothesis the vector of concentration parameters $\alpha$ has to consist of the same values, i.e.\ $\alpha_i = $const. The sum of the concentration parameters $\sum{\alpha}$ can be interpreted as the number of evaluations we allow under the null hypothesis. Jeffreys' uninformative prior \citep{jeffreys:1946} for this situation is $\alpha = \frac{1}{2}$.
 \hh{XXX this is likely a parameter we have to fine-tune, right now it is set to be $\alpha = 1/2$. 
 For $\alpha = 1$ we need a lot of data (in form of evaluations by observers) in order to get the posterior distribution away from the prior, even if we have a strong signal.}
 
@@ -258,6 +258,7 @@ For the example here, the posterior probabilities of $P(p > 2 \frac{1}{m})$ are 
 }
 \hh{XXX after discussion with Susan: put a prior on the cutoff probability - Uniform, I guess, and either integrate it out or find a mode in the posterior.}
 
+\hh{XXX interpretation of Bayes factor; there are different schemes, starting with  \citet{jeffreys:1961} (factor of 5 to 10 is `substantial'), \citet{kass:1995} (factor of 6 to 20 is `strong')}
 
 \begin{figure}
 \begin{subfigure}[b]{.49\textwidth}
