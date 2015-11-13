@@ -277,7 +277,6 @@ dframe <- data.frame(variable = 1:20, Bfactor=round(probs/preprobs,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
 
-function(x) max(density(.$value)$y)
 qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"), 
       colour=I("grey45"), alpha=I(0.5)) + 
   facet_wrap(~variable) + xlim(c(0,1)) +
@@ -322,7 +321,6 @@ dframe <- data.frame(variable = 1:20, Bfactor=round(probs/preprobs,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
 
-function(x) max(density(.$value)$y)
 qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"), 
       colour=I("grey45"), alpha=I(0.5)) + 
   facet_wrap(~variable) + xlim(c(0,1)) +
