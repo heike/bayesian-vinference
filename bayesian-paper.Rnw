@@ -165,7 +165,7 @@ qplot(value, geom="density", data=lpsm, fill=I("grey50"),
 <<posterior, echo=FALSE, warning=FALSE, message=FALSE>>=
 library(dplyr)
 turk19 <- read.csv("data/turk19_results_anon.csv", stringsAsFactors = FALSE)
-pics <- read.csv("data/picture-details.csv", stringsAsFactors = FALSE)
+pics19 <- read.csv("data/picture-details-turk19.csv", stringsAsFactors = FALSE)
 
 getCounts <- function(response) {
   results <- strsplit(response,split=",")
@@ -191,8 +191,13 @@ turk19.picks <- turk19.picks %>% group_by(pic_id) %>% mutate(
   )
 @
 \begin{figure}
-\centering
-<<pics, dependson='posterior', echo=FALSE,  fig.width=8, fig.height = 8, out.width='.7\\textwidth'>>=
+\begin{subfigure}[b]{.49\textwidth}
+\caption{\label{fig:lp-104}Example lineup. }
+\includegraphics[width=\textwidth]{lineup-images/34fcf946135adb1c03b147897f20b33d.pdf}
+\end{subfigure}
+\begin{subfigure}[b]{.49\textwidth}
+\caption{\label{fig:posterior}Posterior densities for one specific lineup. }
+<<pics, dependson='posterior', echo=FALSE,  fig.width=8, fig.height = 8, out.width='\\textwidth'>>=
 
 # show one of the results:
 i <- 1
@@ -213,7 +218,8 @@ counts <- turk19.picks[1, "counts"][[1]][[1]]
 probs <- turk19.picks[1, "post_prob"][[1]][[1]]
 preprobs <- turk19.picks[1, "pre_prob"][[1]][[1]]
 @
-\caption{\label{fig:posterior}Posterior densities for one specific lineup. }
+\end{subfigure}
+\caption{\label{fig:xpl-104} Lineup (left) and posterior densities (right) corresponding to twelve evaluations.}
 \end{figure}
 
 For each individual panel of the lineup, the marginal distributions are Beta distributions. For the distribution of picking panel $i$ the prior distribution is therefore a Beta distribution Beta$(1, 19)$. In the example of Figure~\ref{fig:posterior} we have a Beta distribution of Beta$(\Sexpr{counts[11]+ alpha[11]}, \Sexpr{sum(alpha)+sum(counts)-counts[11]-alpha[11]})$ for panel \#11 and Beta$(\Sexpr{counts[20]+ alpha[20]}, \Sexpr{sum(alpha)+sum(counts)-counts[20]-alpha[20]})$ for panel \#20. 
@@ -225,6 +231,65 @@ For the example here, the posterior probabilities of $P(p > 2 \frac{1}{m})$ are 
 }
 
 \hh{XXX what is nice about this model is that it seamlessly allows to incorporate results from multiple picks by using reciprocal weights: if an evaluator identified three panels as the `most different', each of these three panels gets an additional $1/3$ to its overall count.}
+
+\begin{figure}
+\begin{subfigure}[b]{.49\textwidth}
+\caption{\label{fig:lp-114}Example lineup. }
+\includegraphics[width=\textwidth]{lineup-images/e30ff06449a4b7664fe3109f7e2e996f.pdf}
+\end{subfigure}
+\begin{subfigure}[b]{.49\textwidth}
+\caption{\label{fig:posterior2}Posterior densities for one specific lineup. }
+<<pics2, dependson='posterior', echo=FALSE,  fig.width=8, fig.height = 8, out.width='\\textwidth'>>=
+
+# show one of the results:
+i <- 2
+
+lpsXXX <- data.frame(rdirichlet(5000, alpha+turk19.picks$counts[i][[1]]))
+lpsXXXm <- melt(lpsXXX, measure.var=1:20)
+lpsXXXm$variable <- as.numeric(gsub("X", "", lpsXXXm$variable))
+
+qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"), 
+      colour=I("grey45"), alpha=I(0.5)) + 
+  facet_wrap(~variable) + xlim(c(0,1)) +
+  theme_bw() +
+  xlab("Posterior probability to pick plot") +
+  ggtitle(sprintf("Pic ID %s (based on %.1f picks)", turk19.picks$pic_id[i],
+                  sum(turk19.picks$counts[i][[1]])))
+
+@
+\end{subfigure}
+\caption{\label{fig:xpl-114} Lineup (left) and posterior densities (right) corresponding to twelve evaluations.}
+\end{figure}
+
+\begin{figure}
+\begin{subfigure}[b]{.49\textwidth}
+\caption{\label{fig:lp-114}Example lineup. }
+\includegraphics[width=\textwidth]{lineup-images/410ae69056bd60b49a9b70ca295f19de.pdf}
+\end{subfigure}
+\begin{subfigure}[b]{.49\textwidth}
+\caption{\label{fig:posterior2}Posterior densities for one specific lineup. }
+<<pics3, dependson='posterior', echo=FALSE,  fig.width=8, fig.height = 8, out.width='\\textwidth'>>=
+
+# show one of the results:
+i <- 3
+
+lpsXXX <- data.frame(rdirichlet(5000, alpha+turk19.picks$counts[i][[1]]))
+lpsXXXm <- melt(lpsXXX, measure.var=1:20)
+lpsXXXm$variable <- as.numeric(gsub("X", "", lpsXXXm$variable))
+
+qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"), 
+      colour=I("grey45"), alpha=I(0.5)) + 
+  facet_wrap(~variable) + xlim(c(0,1)) +
+  theme_bw() +
+  xlab("Posterior probability to pick plot") +
+  ggtitle(sprintf("Pic ID %s (based on %.1f picks)", turk19.picks$pic_id[i],
+                  sum(turk19.picks$counts[i][[1]])))
+
+@
+\end{subfigure}
+\caption{\label{fig:xpl-124} Lineup (left) and posterior densities (right) corresponding to twelve evaluations.}
+\end{figure}
+
 \bibliographystyle{asa}
 \bibliography{references}
 
