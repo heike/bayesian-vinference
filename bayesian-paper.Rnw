@@ -1,41 +1,38 @@
 \documentclass[12pt]{article}
-\usepackage{natbib}
-% %\usepackage{fullpage}
-\usepackage{color}
-\usepackage[dvipsnames,svgnames*]{xcolor}
-\usepackage{array}
-\usepackage[colorlinks=TRUE, linkcolor=blue]{hyperref}
-\usepackage{wrapfig,float}
+% \usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+% \geometry{letterpaper}                   % ... or a4paper or a5paper or ...
+%\usepackage{graphicx}
 \usepackage[font=small,skip=5pt]{caption}
 \usepackage{subcaption}
-\usepackage{graphicx}
-%\usepackage{amssymb}
-\usepackage{amsmath}
-\usepackage{dsfont}
-\usepackage{amsthm}
-\usepackage{amsfonts}
-\usepackage{url}
-\usepackage{ulem}
-\usepackage[section]{placeins}
 \usepackage{afterpage}
-
+\usepackage{amssymb}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+% \usepackage{color}
+\usepackage{multirow}
+\usepackage{rotating}
+\usepackage[dvipsnames,svgnames,table]{xcolor}
+\usepackage{hyperref}
 \graphicspath{{figure/}}
-\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+% \usepackage{endfloat} % Figures to the end of the document
 
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+%---------------------------------------------------
+%                 Editing Commands
 \newcommand{\hh}[1]{{\color{magenta} #1}}
 \newcommand{\srv}[1]{{\color{orange} #1}}
 \newcommand{\eh}[1]{{\color{cyan} #1}}
 
+%---------------------------------------------------
+%                 Placing Figures
 
-%\usepackage[dvips]{graphics}
-\newtheorem{thm}{Theorem}[section]
-\newtheorem{dfn}{Definition}[section]
-\newtheorem{cor}{Corollary}[thm]
-\newtheorem{con}{Conjecture}[thm]
-%\setlength{\parindent}{0in}   % for no indent
 
-%\topmargin -0.10in   % when making pdf
-%\textheight 9.15in  % when making pdf
+%---------------------------------------------------
+% Define new environment
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{algorithm}[theorem]{Algorithm}
+%---------------------------------------------------
 
 %\pdfminorversion=4
 % NOTE: To produce blinded version, replace "0" with "1" below.
@@ -62,12 +59,12 @@
 \if0\blind
 {
   \title{\bf A Bayesian approach to visual inference}
-\author{Susan Vander Plas, Eric Hare\thanks{
-    The authors gratefully acknowledge funding from the National Science Foundation Grant DMS \#1007697. All data collection has been conducted with approval from the Institutional Review Board IRB 10-347.}\hspace{.2cm}\\
+  \author{Susan VanderPlas, Eric Hare\thanks{
+    The authors gratefully acknowledge funding from the National Science Foundation Grant \# DMS 1007697. All data collection has been conducted with approval from the Institutional Review Board IRB 10-347}\hspace{.2cm}\\
     Department of Statistics and Statistical Laboratory, Iowa State University\\
     and \\
     Heike Hofmann\\
-    Department of Statistics and Statistical Laboratory, Iowa State University \\
+    Department of Statistics and Statistical Laboratory, Iowa State University}
   \maketitle
 } \fi
 
@@ -84,30 +81,18 @@
 
 \bigskip
 \begin{abstract}
-Graphics play a crucial role in statistical analysis and data mining. Being able to quantify structure in data that is visible in plots, and how people read the structure from plots is an ongoing challenge. 
+Graphics are very effective for communicating numerical information quickly and efficiently, but many of the design choices we make are based on subjective measures, such as personal taste or conventions of the discipline rather than objective criteria. We briefly introduce perceptual principles such as preattentive features and gestalt heuristics, and then discuss the design and results of a factorial experiment examining the effect of plot aesthetics such as color and trend lines on participants' assessment of ambiguous data displays. The quantitative and qualitative experimental results strongly suggest that plot aesthetics have a significant impact on the perception of important features in data displays.
 \end{abstract}
 
 \noindent%
-{\it Keywords:}  data visualization, statistical graphics, data mining, data science, information visualization
+{\it Keywords:}  Visual inference, Lineup protocol, Preattentive Features, Saliency of Plot Aesthetics, User Study.
 \vfill
 
 \newpage
 \spacingset{1.45} % DON'T change the spacing!
+
 \tableofcontents
 \newpage
-
-
-<<setup, echo=FALSE, results='hide', message=FALSE, warning=FALSE>>=
-library(reshape2)
-suppressMessages(library(ggplot2))
-library(grid)
-library(nullabor)
-library(dplyr)
-theme_lineup <- theme(axis.text = element_blank(), 
-                      axis.title = element_blank(),
-                      axis.ticks = element_blank(),
-                      plot.margin=unit(c(0,0,0,0), unit="cm"))
-@
 
 \section{Introduction} 
 Graphics are an important component of big data analysis, providing a mechanism for discovering unexpected patterns in data. Pioneering research by \citet{gelman:2004}, \citet{buja:2009} and \citet{majumder:2011} provide methods to quantify the significance of discoveries made from visualizations. %Although, there have been major advances in statistical graphics over the years, for example, systems like R \citep{R} provide high quality static graphics, and very recently some access to interactive graphics. But the problem remains that graphics are not widely considered to be a part of inferential statistics. 
@@ -344,6 +329,5 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
 
 \bibliographystyle{asa}
 \bibliography{references}
-
 
 \end{document}
