@@ -137,7 +137,9 @@ c &=& (c_1, ..., c_m) = \text{ number of picks of each plot} \\
 p \mid x, \alpha &\sim& Dir (K, \alpha_1+c_1, \alpha_2+c_2, ..., \alpha_m + c_m)
 \end{eqnarray*}
 
-For visual inference, we are usually dealing with a null hypothesis of the form `the plot of the data is not in any way different from the null plots'.  Under this null hypothesis the vector of concentration parameters $\alpha$ has to consist of the same values, i.e.\ $\alpha_i = $const. The sum of the concentration parameters $\sum(\alpha)$ can be interpreted as the number of evaluations we allow under the null hypothesis. \hh{XXX this is likely a parameter we have to fine-tune, because right now it is set to be 20. We therefore need a lot of real evaluations in order to get the posterior distribution away from the prior, even if we have a strong signal.}
+For visual inference, we are usually dealing with a null hypothesis of the form `the plot of the data is not in any way different from the null plots'.  Under this null hypothesis the vector of concentration parameters $\alpha$ has to consist of the same values, i.e.\ $\alpha_i = $const. The sum of the concentration parameters $\sum{\alpha}$ can be interpreted as the number of evaluations we allow under the null hypothesis. Jeffrey's uninformative prior \citep{jeffreys:1946} for this situation is $\alpha = \frac{1}{2}$.
+\hh{XXX this is likely a parameter we have to fine-tune, right now it is set to be $\alpha = 1/2$. 
+For $\alpha = 1$ we need a lot of data (in form of evaluations by observers) in order to get the posterior distribution away from the prior, even if we have a strong signal.}
 
 \begin{figure}
 \centering
@@ -147,7 +149,7 @@ library(reshape2)
 library(ggplot2)
 
 m <- 20
-alpha <- rep(1, m)
+alpha <- rep(1/2, m)
 lps <- data.frame(rdirichlet(5000, alpha))
 
 lpsm <- melt(lps, measure.var=1:20)
@@ -236,7 +238,7 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
   xlab("Posterior probability to pick plot") +
   ggtitle(sprintf("Pic ID %s (based on %.1f picks)", turk19.picks$pic_id[i],
                   sum(turk19.picks$counts[i][[1]]))) + 
-  geom_text(data=dframe, aes(label = Bfactor), x = 1, y = ymax, size = 5, 
+  geom_text(data=dframe, aes(label = Bfactor), x = 1, y = 0.9*ymax, size = 5, 
             colour="grey70", hjust="inward", vjust="inward")
   
 @
@@ -284,7 +286,7 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
   xlab("Posterior probability to pick plot") +
   ggtitle(sprintf("Pic ID %s (based on %.1f picks)", turk19.picks$pic_id[i],
                   sum(turk19.picks$counts[i][[1]]))) + 
-  geom_text(data=dframe, aes(label = Bfactor), x = 1, y = ymax, size = 5, 
+  geom_text(data=dframe, aes(label = Bfactor), x = 1, y = 0.9*ymax, size = 5, 
             colour="grey70", hjust="inward", vjust="inward")
 @
 \end{subfigure}
@@ -328,7 +330,7 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
   xlab("Posterior probability to pick plot") +
   ggtitle(sprintf("Pic ID %s (based on %.1f picks)", turk16.picks$pic_id[i],
                   sum(turk16.picks$counts[i][[1]]))) + 
-  geom_text(data=dframe, aes(label = Bfactor), x = 1, y = ymax, size = 5, 
+  geom_text(data=dframe, aes(label = Bfactor), x = 1, y = 0.9*ymax, size = 5, 
             colour="grey70", hjust="inward", vjust="inward")
 
 @
