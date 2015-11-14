@@ -154,10 +154,6 @@ qplot(value, geom="density", data=lpsm, fill=I("grey50"),
 
 <<posterior, echo=FALSE, warning=FALSE, message=FALSE>>=
 library(dplyr)
-turk19 <- read.csv("data/turk19_results_anon.csv", stringsAsFactors = FALSE)
-turk16 <- read.csv("data/turk16_results.csv", stringsAsFactors = FALSE)
-pics19 <- read.csv("data/picture-details-turk19.csv", stringsAsFactors = FALSE)
-pics16 <- read.csv("data/picture-details-turk16.csv", stringsAsFactors = FALSE)
 
 getCounts <- function(response) {
   results <- strsplit(response,split=",")
@@ -169,33 +165,97 @@ getCounts <- function(response) {
   counts <- xtabs(wt~picks)
   as.vector(counts)
 }
-turk19.picks <- turk19 %>% group_by(pic_id) %>% do(
-  counts = getCounts(.$response_no))
-turk19.picks <- turk19.picks %>% group_by(pic_id) %>% mutate(
-  picks = sum(counts[[1]]),
-  post_mean = list((alpha + counts[[1]])/sum(alpha + counts[[1]])),
-  post_mode = list((alpha + counts[[1]] - 1)/sum(alpha + counts[[1]]-1)),
-  pre_prob  = list(pbeta(1/20*2, shape1=alpha, shape2=sum(alpha)-alpha, 
-                    lower.tail=FALSE)),
-  post_prob = list(pbeta(1/20*2, shape1=alpha+counts[[1]], 
-                    shape2=sum(alpha)-alpha + sum(counts[[1]]) - counts[[1]], 
-                    lower.tail=FALSE))
-  )
+
+bfactor <- function(alpha, counts) {
+  x <- seq(0,0.9999, by=0.005)
+  bf <- lapply(x, function(z) {
+    pre <- pbeta(z, shape1=alpha, shape2=sum(alpha)-alpha, 
+                           lower.tail=FALSE)
+    post <- pbeta(z, shape1=alpha+counts, 
+                shape2=sum(alpha)-alpha + sum(counts) - counts,
+                lower.tail=FALSE)
+    post/pre
+  })
+  # now get averages
+  bfavg <- rep(0, 20)
+  for (i in 1:length(x)) {
+    bfavg <- bfavg + bf[[i]]
+  }
+  
+  bfavg/length(x)
+}
 
 
-turk16.picks <- turk16 %>% group_by(pic_id) %>% do(
-  counts = getCounts(.$response_no))
-turk16.picks <- turk16.picks %>% group_by(pic_id) %>% mutate(
-  picks = sum(counts[[1]]),
-  post_mean = list((alpha + counts[[1]])/sum(alpha + counts[[1]])),
-  post_mode = list((alpha + counts[[1]] - 1)/sum(alpha + counts[[1]]-1)),
-  pre_prob  = list(pbeta(1/20*2, shape1=alpha, shape2=sum(alpha)-alpha, 
-                    lower.tail=FALSE)),
-  post_prob = list(pbeta(1/20*2, shape1=alpha+counts[[1]], 
-                    shape2=sum(alpha)-alpha + sum(counts[[1]]) - counts[[1]], 
-                    lower.tail=FALSE))
+pre_post_picks <- function(data) {
+  # needs to have a picture id
+  data.picks <- data %>% group_by(pic_id) %>% do(
+    counts = getCounts(.$response_no))
+  data.picks <- data.picks %>% group_by(pic_id) %>% mutate(
+    picks = sum(counts[[1]]),
+    post_mean = list((alpha + counts[[1]])/sum(alpha + counts[[1]])),
+    post_mode = list((alpha + counts[[1]] - 1)/sum(alpha + counts[[1]]-1)),
+    bfactor = list(bfactor(alpha, counts[[1]])),
+    pre_prob  = list(pbeta(1/20*2, shape1=alpha, shape2=sum(alpha)-alpha, 
+                           lower.tail=FALSE)),
+    post_prob = list(pbeta(1/20*2, shape1=alpha+counts[[1]], 
+                           shape2=sum(alpha)-alpha + sum(counts[[1]]) - counts[[1]], 
+                           lower.tail=FALSE))
   )
+  data.picks
+}
+
+turk19 <- read.csv("data/turk19_results_anon.csv", stringsAsFactors = FALSE)
+turk16 <- read.csv("data/turk16_results.csv", stringsAsFactors = FALSE)
+turk1013 <- read.csv("data/turk1013_results.csv", stringsAsFactors = FALSE)
+
+pics19 <- read.csv("data/picture-details-turk19.csv", stringsAsFactors = FALSE)
+pics16 <- read.csv("data/picture-details-turk16.csv", stringsAsFactors = FALSE)
+pics10 <- read.csv("data/picture-details-turk10.csv", stringsAsFactors = FALSE)
+
+turk19.picks <- pre_post_picks(turk19)
+turk16.picks <- pre_post_picks(turk16)
+turk1013.picks <- pre_post_picks(turk1013)
 @
+
+\begin{figure}
+\begin{subfigure}[b]{.49\textwidth}
+\caption{\label{fig:lp-104}Example lineup. }
+\includegraphics[width=\textwidth]{lineup-images/filebab6558ba4c4-multiple.pdf}
+\end{subfigure}
+\begin{subfigure}[b]{.49\textwidth}
+\caption{\label{fig:posterior}Posterior densities for one specific lineup. }
+<<pics-turk1013, dependson='posterior', echo=FALSE,  fig.width=8, fig.height = 8, out.width='\\textwidth'>>=
+# show one of the results:
+i <- 1
+
+lpsXXX <- data.frame(rdirichlet(5000, alpha+turk1013.picks$counts[i][[1]]))
+lpsXXXm <- melt(lpsXXX, measure.var=1:20)
+lpsXXXm$variable <- as.numeric(gsub("X", "", lpsXXXm$variable))
+
+counts <- turk1013.picks[i, "counts"][[1]][[1]]
+#probs <- turk1013.picks[i, "post_prob"][[1]][[1]]
+#preprobs <- turk1013.picks[i, "pre_prob"][[1]][[1]]
+bfactor <- turk1013.picks[i, "bfactor"][[1]][[1]]
+dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
+
+ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
+
+qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"), 
+      colour=I("grey45"), alpha=I(0.5)) + 
+  facet_wrap(~variable) + xlim(c(0,1)) +
+  theme_bw() +
+  xlab("Posterior probability to pick plot") +
+  ggtitle(sprintf("Pic ID %s (based on %.1f picks)", turk1013.picks$pic_id[i],
+                  sum(turk1013.picks$counts[i][[1]]))) + 
+  geom_text(data=dframe, aes(label = Bfactor), x = 1, y = 0.95*ymax, size = 5, 
+            colour="grey70", hjust="inward", vjust="inward")
+  
+@
+\end{subfigure}
+\caption{\label{fig:xpl-turk1013} Lineup (left) and posterior densities (right) corresponding to evaluations by independent observers.}
+\end{figure}
+
+
 \begin{figure}
 \begin{subfigure}[b]{.49\textwidth}
 \caption{\label{fig:lp-104}Example lineup. }
@@ -215,7 +275,8 @@ lpsXXXm$variable <- as.numeric(gsub("X", "", lpsXXXm$variable))
 counts <- turk19.picks[i, "counts"][[1]][[1]]
 probs <- turk19.picks[i, "post_prob"][[1]][[1]]
 preprobs <- turk19.picks[i, "pre_prob"][[1]][[1]]
-dframe <- data.frame(variable = 1:20, Bfactor=round(probs/preprobs,2))
+bfactor <- turk19.picks[i, "bfactor"][[1]][[1]]
+dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
 
@@ -262,9 +323,10 @@ lpsXXXm <- melt(lpsXXX, measure.var=1:20)
 lpsXXXm$variable <- as.numeric(gsub("X", "", lpsXXXm$variable))
 
 counts <- turk19.picks[i, "counts"][[1]][[1]]
-probs <- turk19.picks[i, "post_prob"][[1]][[1]]
-preprobs <- turk19.picks[i, "pre_prob"][[1]][[1]]
-dframe <- data.frame(variable = 1:20, Bfactor=round(probs/preprobs,2))
+#probs <- turk19.picks[i, "post_prob"][[1]][[1]]
+#preprobs <- turk19.picks[i, "pre_prob"][[1]][[1]]
+bfactor <- turk19.picks[i, "bfactor"][[1]][[1]]
+dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
 
@@ -306,9 +368,10 @@ lpsXXXm <- melt(lpsXXX, measure.var=1:20)
 lpsXXXm$variable <- as.numeric(gsub("X", "", lpsXXXm$variable))
 
 counts <- turk16.picks[i, "counts"][[1]][[1]]
-probs <- turk16.picks[i, "post_prob"][[1]][[1]]
-preprobs <- turk16.picks[i, "pre_prob"][[1]][[1]]
-dframe <- data.frame(variable = 1:20, Bfactor=round(probs/preprobs,2))
+#probs <- turk16.picks[i, "post_prob"][[1]][[1]]
+#preprobs <- turk16.picks[i, "pre_prob"][[1]][[1]]
+bfactor <- turk16.picks[i, "bfactor"][[1]][[1]]
+dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
 
