@@ -325,8 +325,8 @@ we average over all possible values of $c$ and get the Bayes factor for plot \#$
 B(p_i) = \int_0^1 B_c(p_i) dc = \int_0^1 \frac{P(p_i > c \mid x, \alpha)}{P(p_i > c \mid \alpha)} dc.
 \]
 
-
-\hh{XXX interpretation of Bayes factor; there are different schemes, starting with  \citet{jeffreys:1961} (factor of 5 to 10 is `substantial'), \citet{kass:1995} (factor of 6 to 20 is `strong')}
+There are different schemes interpreting the Bayes factor. \citet{jeffreys:1961} consider a factor of 5 to 10 as `substantial', and values above 20 as `decisive'. 
+Alternatively, \citet{kass:1995} consider a factor of 6 to 10 as `strong', and values above 10 as `very strong'.
 
 \hh{XXX investigate Bayes factor of different scenarios, ie ten evaluations, different number of data picks and null picks. How does that compare to the visual distribution $V_3$? (the Binomial like distribution that is adjusted for dependencies between the data and the nulls). }
 
