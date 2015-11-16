@@ -95,7 +95,7 @@ Graphics play a crucial role in statistical analysis and data mining. Being able
 \newpage
 
 <<setup, echo = FALSE, message = FALSE, warning = FALSE>>=
-options(replace.assign=TRUE,width=70)
+options(replace.assign=TRUE,width=70, digits=2)
 require(knitr)
 opts_chunk$set(fig.path='figure/', cache.path='cache/', fig.align='center', fig.width=5, fig.height=5, par=TRUE, cache=TRUE, concordance=TRUE, autodep=TRUE, message=F, warning=F)
 
@@ -227,7 +227,7 @@ turk1013.picks <- pre_post_picks(turk1013)
 \includegraphics[width=\textwidth]{lineup-images/filebab6558ba4c4-multiple.pdf}
 \end{subfigure}
 \begin{subfigure}[b]{.49\textwidth}
-\caption{\label{fig:posterior}Posterior densities for one specific lineup. }
+\caption{\label{fig:posterior}Posterior densities for the choosing panel \#$i$. }
 <<pics-turk1013, dependson='posterior', echo=FALSE,  fig.width=8, fig.height = 8, out.width='\\textwidth'>>=
 # show one of the results:
 i <- 1
@@ -266,7 +266,7 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
 \includegraphics[width=\textwidth]{lineup-images/34fcf946135adb1c03b147897f20b33d.pdf}
 \end{subfigure}
 \begin{subfigure}[b]{.49\textwidth}
-\caption{\label{fig:posterior}Posterior densities for one specific lineup. }
+\caption{\label{fig:posterior}Posterior densities for the choosing panel \#$i$. }
 <<pics, dependson='posterior', echo=FALSE,  fig.width=8, fig.height = 8, out.width='\\textwidth'>>=
 
 # show one of the results:
@@ -302,10 +302,9 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
 
 For each individual panel of the lineup, the marginal distributions are Beta distributions. For the distribution of picking panel $i$ the prior distribution is therefore a Beta distribution Beta$(1, 19)$. In the example of Figure~\ref{fig:posterior} we have a Beta distribution of Beta$(\Sexpr{counts[11]+ alpha[11]}, \Sexpr{sum(alpha)+sum(counts)-counts[11]-alpha[11]})$ for panel \#11 and Beta$(\Sexpr{counts[20]+ alpha[20]}, \Sexpr{sum(alpha)+sum(counts)-counts[20]-alpha[20]})$ for panel \#20. 
 
-\hh{XXX knitr question how do I set the number of digits in the output automatically?}
 
 \paragraph{Calculation of the Bayes factor for plot \#$i$}\hfill\newline
-\hh{XXX after discussion with Susan: put a prior on the cutoff probability - Uniform, I guess, and either integrate it out or find a mode in the posterior.}
+\hh{XXX after discussion with Susan: put a prior uniform on the cutoff threshold $c$ - either integrate it out or find a mode in the posterior.}
 \hh{XXX  integration seems to work out really well - what do you think? }
 
 In order to assess the strength of the signal of plot \#$i$, we assess the probability that an observer chooses this plot at a pre-specified level $c$ and compare the posterior probability to its prior for a Bayes factor. 
@@ -354,7 +353,7 @@ Alternatively, \citet{kass:1995} consider a factor of 6 to 10 as `strong', and v
 \includegraphics[width=\textwidth]{lineup-images/e30ff06449a4b7664fe3109f7e2e996f.pdf}
 \end{subfigure}
 \begin{subfigure}[b]{.49\textwidth}
-\caption{\label{fig:posterior2}Posterior densities for one specific lineup. }
+\caption{\label{fig:posterior2}Posterior densities for the choosing panel \#$i$. }
 <<pics2, dependson='posterior', echo=FALSE,  fig.width=8, fig.height = 8, out.width='\\textwidth'>>=
 
 # show one of the results:
@@ -392,7 +391,7 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
 \includegraphics[width=\textwidth]{lineup-images/5f9885168e3a02f57ab7216e9f76141d.pdf}
 \end{subfigure}
 \begin{subfigure}[b]{.49\textwidth}
-\caption{\label{fig:posterior2}Posterior densities for one specific lineup. }
+\caption{\label{fig:posterior2}Posterior densities for the choosing panel \#$i$. }
 <<pics3, dependson='posterior', echo=FALSE,  fig.width=8, fig.height = 8, out.width='\\textwidth'>>=
 dname <- gsub("-turk16","", subset(pics19, pic_id == 104)$data_name)
 dname <- gsub("sd\\.","sd", dname)
