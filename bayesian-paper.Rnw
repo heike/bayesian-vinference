@@ -130,7 +130,7 @@ c &=& (c_1, ..., c_m) = \text{ number of picks of each plot} \\
 p \mid x, \alpha &\sim& Dir (K, \alpha_1+c_1, \alpha_2+c_2, ..., \alpha_m + c_m)
 \end{eqnarray*}
 
-For visual inference, we are usually dealing with a null hypothesis of the form `the plot of the data is not in any way different from the null plots'.  Under this null hypothesis the vector of concentration parameters $\alpha$ has to consist of the same values, i.e.\ $\alpha_i = $const. The sum of the concentration parameters $\sum{\alpha}$ can be interpreted as the number of evaluations we allow under the null hypothesis. Jeffreys' uninformative prior \citep{jeffreys:1946} for this situation is $\alpha = \frac{1}{2}$.
+For visual inference, we are usually dealing with a null hypothesis of the form `the plot of the data is not in any way different from the null plots'.  Under this null hypothesis the vector of concentration parameters $\alpha$ has to consist of the same values, i.e.\ $\alpha_i = $const. The sum of the concentration parameters $\sum{\alpha}$ can be interpreted as the number of (pseudo)evaluations  under the null hypothesis. Jeffreys' uninformative prior \citep{jeffreys:1946} for this situation is $\alpha = \frac{1}{2}$, corresponding to 10 pseudo-evaluations.
 \hh{XXX this is likely a parameter we have to fine-tune, right now it is set to be $\alpha = 1/2$. 
 For $\alpha = 1$ we need a lot of data (in form of evaluations by observers) in order to get the posterior distribution away from the prior, even if we have a strong signal.}
 
@@ -314,7 +314,8 @@ More formally, we define the Bayes factor of choosing plot \#$i$ given threshold
 B_c(p_i) = \frac{P(p_i > c \mid x, \alpha)}{P(p_i > c \mid \alpha)},
 \]
 where $c$ is a pre-specified threshold with $c \in (0,1)$ and $p_i$ is the probability that an observer chooses plot \#$i$, $1 \le i \le m$, as the most different. 
-The choice of $c$ is critical: a natural choice would be $c = 1/m$, where $m$ is the size of the lineup. However, the prior probability in a lineup of size 20 is $\Sexpr{round(pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 3)}$. This puts an upper limit on the Bayes factor of $\Sexpr{round(1/pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 2)}$ (the reciprocal value of the prior). A higher threshold allows for a higher upper limit on the Bayes factor, e.g.\ a threshold of $c = \frac{2}{m}$ already allows for a Bayes factor of up to \Sexpr{round(1/pbeta(1/20*2, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE),2)}. An overview of the Bayes factors $B_c$ for a specific lineup is shown in Figure~\ref{fig:bc-104}.
+The choice of $c$ is critical: a natural choice would be $c = 1/m$, where $m$ is the size of the lineup. However, the prior probability in a lineup of size 20 is $\Sexpr{round(pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 3)}$. This puts an upper limit on the Bayes factor of $\Sexpr{round(1/pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 2)}$ (the reciprocal value of the prior). A higher threshold allows for a higher upper limit on the Bayes factor, e.g.\ a threshold of $c = \frac{2}{m}$ already allows for a Bayes factor of up to \Sexpr{round(1/pbeta(1/20*2, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE),2)}. For the example shown in Figure~\ref{fig:xpl-104}, the posterior probabilities of picking panels \#11 and \#20 with a probability of at least $c = \frac{2}{m}$ are \Sexpr{round(probs[11],4)} and \Sexpr{round(probs[20],4)}, respectively. This corresponds to Bayes factors of  \Sexpr{round(probs[11]/preprobs[11],2)} and \Sexpr{round(probs[20]/preprobs[20],2)}.
+An overview of the Bayes factors $B_c$ for a specific lineup is shown in Figure~\ref{fig:bc-104}.
 
 \begin{figure}
 \begin{subfigure}[b]{.49\textwidth}
@@ -336,10 +337,8 @@ qplot(x, capbf,  geom="line", data= BFS) + theme_bw() +
 \caption{\label{fig:bc-104} Lineup (left) and Bayes factors at threshold $c$ (right). Note that the Bayes factors for plot \#20 are capped at a value of 20. Uncapped, the Bayes factor for \#20 reaches a mode of over 300. }
 \end{figure}
 
-For the example shown in Figure~\ref{fig:xpl-104}, the posterior probabilities of picking panels \#11 and \#20 with a probability of at least $c = \frac{2}{m}$ are \Sexpr{round(probs[11],4)} and \Sexpr{round(probs[20],4)}, respectively. This corresponds to Bayes factors of  \Sexpr{round(probs[11]/preprobs[11],2)} and \Sexpr{round(probs[20]/preprobs[20],2)}.
-
 Instead of deciding for a single value of $c$, 
-we average over all possible values of $c$ and get the Bayes factor for plot \#$i$ as:
+we integrate over all possible values of $c$ and get the Bayes factor for plot \#$i$ as:
 \[
 B(p_i) = \int_0^1 B_c(p_i) dc = \int_0^1 \frac{P(p_i > c \mid x, \alpha)}{P(p_i > c \mid \alpha)} dc.
 \]
