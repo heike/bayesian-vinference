@@ -172,25 +172,23 @@ getCounts <- function(response) {
   as.vector(counts)
 }
 
+
 bfactor <- function(alpha, counts) {
-  x <- seq(0,0.9999, by=0.005)
-  bf <- lapply(x, function(z) {
-    pre <- pbeta(z, shape1=alpha, shape2=sum(alpha)-alpha, 
+  x <- seq(0,0.9999, by=0.01)
+  bf <- lapply(1:20, function(i) {
+    pre <- pbeta(x, shape1=alpha[i], shape2=sum(alpha)-alpha[i], 
                            lower.tail=FALSE)
-    post <- pbeta(z, shape1=alpha+counts, 
-                shape2=sum(alpha)-alpha + sum(counts) - counts,
+    post <- pbeta(x, shape1=alpha[i]+counts[i], 
+                shape2=sum(alpha)-alpha[i] + sum(counts) - counts[i],
                 lower.tail=FALSE)
     post/pre
   })
   # now get averages
-  bfavg <- rep(0, 20)
-  for (i in 1:length(x)) {
-    bfavg <- bfavg + bf[[i]]
-  }
+  bfavg <- bf %>% lapply(sum) %>% unlist
+  bfmode <- bf %>% lapply(max) %>% unlist
   
-  bfavg/length(x)
+  list(avg = bfavg/length(x), mode = bfmode, factor = bf)
 }
-
 
 pre_post_picks <- function(data) {
   # needs to have a picture id
@@ -241,7 +239,7 @@ lpsXXXm$variable <- as.numeric(gsub("X", "", lpsXXXm$variable))
 counts <- turk1013.picks[i, "counts"][[1]][[1]]
 #probs <- turk1013.picks[i, "post_prob"][[1]][[1]]
 #preprobs <- turk1013.picks[i, "pre_prob"][[1]][[1]]
-bfactor <- turk1013.picks[i, "bfactor"][[1]][[1]]
+bfactor <- turk1013.picks[i, "bfactor"]$bfactor[[1]]$avg
 dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
@@ -281,7 +279,8 @@ lpsXXXm$variable <- as.numeric(gsub("X", "", lpsXXXm$variable))
 counts <- turk19.picks[i, "counts"][[1]][[1]]
 probs <- turk19.picks[i, "post_prob"][[1]][[1]]
 preprobs <- turk19.picks[i, "pre_prob"][[1]][[1]]
-bfactor <- turk19.picks[i, "bfactor"][[1]][[1]]
+bfactor <- turk19.picks[i, "bfactor"]$bfactor[[1]]$avg
+bfs <- turk19.picks[i, "bfactor"]$bfactor[[1]]$factor
 dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
@@ -315,7 +314,27 @@ More formally, we define the Bayes factor of choosing plot \#$i$ given threshold
 B_c(p_i) = \frac{P(p_i > c \mid x, \alpha)}{P(p_i > c \mid \alpha)},
 \]
 where $c$ is a pre-specified threshold with $c \in (0,1)$ and $p_i$ is the probability that an observer chooses plot \#$i$, $1 \le i \le m$, as the most different. 
-The choice of $c$ is critical: a natural choice would be $c = 1/m$, where $m$ is the size of the lineup. However, the prior probability in a lineup of size 20 is $\Sexpr{round(pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 3)}$. This puts an upper limit on the Bayes factor of $\Sexpr{round(1/pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 2)}$ (the reciprocal value of the prior). A higher threshold allows for a higher upper limit on the Bayes factor, e.g.\ a threshold of $c = \frac{2}{m}$ already allows for a Bayes factor of up to \Sexpr{round(1/pbeta(1/20*2, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE),2)}.
+The choice of $c$ is critical: a natural choice would be $c = 1/m$, where $m$ is the size of the lineup. However, the prior probability in a lineup of size 20 is $\Sexpr{round(pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 3)}$. This puts an upper limit on the Bayes factor of $\Sexpr{round(1/pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 2)}$ (the reciprocal value of the prior). A higher threshold allows for a higher upper limit on the Bayes factor, e.g.\ a threshold of $c = \frac{2}{m}$ already allows for a Bayes factor of up to \Sexpr{round(1/pbeta(1/20*2, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE),2)}. An overview of the Bayes factors $B_c$ for a specific lineup is shown in Figure~\ref{fig:bc-104}.
+
+\begin{figure}
+\begin{subfigure}[b]{.49\textwidth}
+\caption{\label{fig:lp-104-bc}Example lineup. }
+\includegraphics[width=\textwidth]{lineup-images/34fcf946135adb1c03b147897f20b33d.pdf}
+\end{subfigure}
+\begin{subfigure}[b]{.49\textwidth}
+\caption{\label{fig:bfactor}Bayes factors at each value of $c \in (0,1)$. }
+<<Bfactorc, echo=FALSE, fig.width=7, fig.height=7>>=
+x <- seq(0,0.9999, by=0.01)
+BFS <- 1:20 %>% lapply(function(i) data.frame(i, x = x, bf=bfs[[i]])) %>% bind_rows
+BFS$capbf <- pmin(BFS$bf, 20)
+qplot(x, capbf,  geom="line", data= BFS) + theme_bw() + 
+  facet_wrap(facets = ~i) + 
+  ylab("Bayes factor at threshold c") + 
+  xlab("Threshold c") #+ ylim(c(0,20))
+@
+\end{subfigure}
+\caption{\label{fig:bc-104} Lineup (left) and Bayes factors at threshold $c$ (right). Note that the Bayes factors for plot \#20 are capped at a value of 20. Uncapped, the Bayes factor for \#20 reaches a mode of over 300. }
+\end{figure}
 
 For the example shown in Figure~\ref{fig:xpl-104}, the posterior probabilities of picking panels \#11 and \#20 with a probability of at least $c = \frac{2}{m}$ are \Sexpr{round(probs[11],4)} and \Sexpr{round(probs[20],4)}, respectively. This corresponds to Bayes factors of  \Sexpr{round(probs[11]/preprobs[11],2)} and \Sexpr{round(probs[20]/preprobs[20],2)}.
 
@@ -349,7 +368,7 @@ lpsXXXm$variable <- as.numeric(gsub("X", "", lpsXXXm$variable))
 counts <- turk19.picks[i, "counts"][[1]][[1]]
 #probs <- turk19.picks[i, "post_prob"][[1]][[1]]
 #preprobs <- turk19.picks[i, "pre_prob"][[1]][[1]]
-bfactor <- turk19.picks[i, "bfactor"][[1]][[1]]
+bfactor <- turk19.picks[i, "bfactor"]$bfactor[[1]]$avg
 dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
@@ -394,7 +413,7 @@ lpsXXXm$variable <- as.numeric(gsub("X", "", lpsXXXm$variable))
 counts <- turk16.picks[i, "counts"][[1]][[1]]
 #probs <- turk16.picks[i, "post_prob"][[1]][[1]]
 #preprobs <- turk16.picks[i, "pre_prob"][[1]][[1]]
-bfactor <- turk16.picks[i, "bfactor"][[1]][[1]]
+bfactor <- turk16.picks[i, "bfactor"]$bfactor[[1]]$avg
 dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
