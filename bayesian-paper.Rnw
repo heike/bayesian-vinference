@@ -163,7 +163,6 @@ qplot(value, geom="density", data=lpsm, fill=I("grey50"),
 <<posterior, echo=FALSE, cache = TRUE, warning=FALSE, message=FALSE>>=
 getCounts <- function(response) {
   results <- strsplit(response,split=",")
-  m <- 20
   wt <- sapply(results, length)
   wt <- 1/rep(wt, wt)
   picks <- factor(as.numeric(unlist(results)), levels=1:20)
@@ -431,6 +430,8 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
 \caption{\label{fig:xpl-124} Lineup (left) and posterior densities (right) corresponding to evaluations by independent observers.}
 \end{figure}
 
+\hh{XXX can we combine multiple lineups?}
+\hh{XXX Bayesian equivalent of a logistic regression with random effects, jags? }
 \bibliographystyle{asa}
 \bibliography{references}
 
