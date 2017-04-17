@@ -20,9 +20,20 @@
 \DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
 %---------------------------------------------------
 %                 Editing Commands
-\newcommand{\hh}[1]{{\color{magenta} #1}}
-\newcommand{\srv}[1]{{\color{orange} #1}}
+%\newcommand{\hh}[1]{{\color{magenta} #1}}
+%\newcommand{\svp}[1]{{\color{orange} #1}}
 \newcommand{\eh}[1]{{\color{cyan} #1}}
+
+\usepackage[colorinlistoftodos]{todonotes}
+%                 Editing Commands
+\newcommand{\done}[2][inline]{\todo[color=SpringGreen, #1]{#2}}  % for todos that have been seen and dealt with
+\newcommand{\meh}[2][inline]{\todo[color=White, #1]{#2}}   % for todos that may no longer be relevant
+\newcommand{\comment}[2][inline]{\todo[color=SkyBlue, #1]{#2}} % for comments that may not be "to-do"s
+\newcommand{\newtext}[1]{\todo[inline, color=White]{ \color{OliveGreen}{#1}}} % new text - not necessarily something to be done
+\newcommand{\newdo}[1]{\todo[inline, color=Lime]{#1}} % new to do item
+\newcommand{\hh}[2][inline]{\todo[color=magenta,#1]{#2}}
+\newcommand{\svp}[2][inline]{\todo[color=orange,#1]{#2}}
+
 
 %---------------------------------------------------
 %                 Placing Figures
@@ -81,7 +92,6 @@
 
 \bigskip
 \begin{abstract}
-% Graphics play a crucial role in statistical analysis and data mining. Being able to quantify structure in data that is visible in plots, and how people read the structure from plots is an ongoing challenge. \hh{XXX just a placeholder}
 Graphics play a crucial role in statistical analysis and data mining. The lineup protocol for experimentally testing graphics has traditionally used p-values to identify plots which are significantly visually distinct from distractor plots, but this approach does not easily translate to examining randomly generated plots to determine the strength of the distractor effect. This study presents a bayesian approach to visual inference, using bayes factors to examine the difference in signal strength in two-target statistical lineups.
 \end{abstract}
 
@@ -104,7 +114,8 @@ library(dplyr)
 @
 
 \section{Introduction}
-Graphics are an important component of big data analysis, providing a mechanism for discovering unexpected patterns in data. Pioneering research by \citet{gelman:2004}, \citet{buja:2009} and \citet{majumder:2011} provide methods to quantify the significance of discoveries made from visualizations. %Although, there have been major advances in statistical graphics over the years, for example, systems like R \citep{R} provide high quality static graphics, and very recently some access to interactive graphics. But the problem remains that graphics are not widely considered to be a part of inferential statistics.
+Graphics are an important component of big data analysis, providing a mechanism for discovering unexpected patterns in data. Pioneering research by \citet{gelman:2004}, \citet{buja:2009} and \citet{majumder:2011} provide methods to quantify the significance of discoveries made from visualizations.
+%Although, there have been major advances in statistical graphics over the years, for example, systems like R \citep{R} provide high quality static graphics, and very recently some access to interactive graphics. But the problem remains that graphics are not widely considered to be a part of inferential statistics.
 \citet{buja:2009} introduced two protocols, the Rorschach and the lineup protocol, which bridge the gulf between traditional statistical inference and exploratory data analysis. The Rorschach protocol consists of a set of $m$ (usually, $m=20$) plots (called the {\it null plots}) rendered from data that is consistent with a given null model. That way, the Rorschach protocol helps to understand the extent of randomness in the null model. Under the lineup protocol, a plot of the observed data is placed randomly among a set of $m-1$ null plots.
 Human observers are then asked to  examine the lineup and to identify the most different plot. If observers identify the data plot, this is quantifiable evidence against the null hypothesis.
 The lineup protocol places a statistical plot firmly in the framework of hypothesis tests: a plot of the data is considered to be the test statistic, which is compared against the sampling distribution under the null hypothesis represented by the null plots.
@@ -115,9 +126,14 @@ Null generating methods are typically based on (a) simulation, if the null hypot
 
 The lineup protocol was formally tested in a head-to-head comparison with the equivalent conventional test in \citet{majumder:2011}. The experiment utilized human subjects from Amazon's Mechanical Turk \citep{turk} and used simulation to control conditions. The results suggest that  visual inference is comparable to conventional tests in a controlled conventional setting. This provides support for its appropriateness for testing in real exploratory situations where no conventional test exists. Interestingly, the power of a visual test increases with the number of observers engaged to evaluate lineups, and the pattern in results suggests that the power will provide results consistent with practical significance \citep{kirk:1996}.
 
-\section{Rough thoughts on the model}
-Let $p_i$, $i = 1, ..., m$ be the probability that plot $i$ is picked. We know that $0 \le p_i \le 1$ with $\sum_{i=1}^m p_i = 1$.
-We can assign an uninformative prior probability to $p$ by using a flat Dirichlet distribution (a uniform distribution over the $(m-1)$ simplex).
+\comment{Should cite Adam's papers that examined some null plots as well. Could even possibly analyze some of that data later on as a proof of concept.}
+
+\subsection{Analysis of Statistical Lineups}
+\comment{Brief overview of standard analysis and analysis of two-target lineups. Cite jcgs paper for two target lineups, methods paper(s) for analysis of lineup data.}
+
+\section{A Bayesian's Statistical Lineup}
+Let $p_i$, $i = 1, ..., m$ be the probability that plot $i$ is picked out of a lineup of $m$ panels. We know that $0 \le p_i \le 1$ with $\sum_{i=1}^m p_i = 1$.
+We can assign an uninformative prior probability to $p$ by using a flat Dirichlet distribution (a uniform distribution over the $(m-1)$ simplex). An uninformative proior is desireable because a priori we assume that the plots are all equally likely to be selected by a participant.
 
 We will use the following model:
 \begin{eqnarray*}
@@ -130,13 +146,16 @@ The posterior distribution is then as follows:
 c &=& (c_1, ..., c_m) = \text{ number of picks of each plot} \\
 p \mid x, \alpha &\sim& Dir (K, \alpha_1+c_1, \alpha_2+c_2, ..., \alpha_m + c_m)
 \end{eqnarray*}
+\svp{What is $K$? Number of evaluations total? also, since $c$ was used for \# picks, I've changed the threshold $c$ to $t$ below.}
+\svp{Need to adjust notation to account for multiple plot selections somehow. Maybe add that extension below? e.g. let $z_{ij}$ represent the selection of plot $i$ as the $j$th plot selected. Then $p_i$ = $\sum_{j = 1}^{20} z_{ij}/\sum_{j = 1}^{20} (z_{ij} \text{ is not null})$ or something?}
 
 For visual inference, we are usually dealing with a null hypothesis of the form `the plot of the data is not in any way different from the null plots'.  Under this null hypothesis the vector of concentration parameters $\alpha$ has to consist of the same values, i.e.\ $\alpha_i = $const. The sum of the concentration parameters $\sum{\alpha}$ can be interpreted as the number of (pseudo)evaluations  under the null hypothesis. Jeffreys' uninformative prior \citep{jeffreys:1946} for this situation is $\alpha = \frac{1}{2}$, corresponding to 10 pseudo-evaluations.
-\hh{XXX this is likely a parameter we have to fine-tune, right now it is set to be $\alpha = 1/2$.
+\hh{this is likely a parameter we have to fine-tune, right now it is set to be $\alpha = 1/2$.
 For $\alpha = 1$ we need a lot of data (in form of evaluations by observers) in order to get the posterior distribution away from the prior, even if we have a strong signal.}
 
 
-Note that one of the advantages of this model is that it allows a seamless incorporation of results from multiple picks by using reciprocal weights: if an evaluator identified three panels as the `most different', each of these three panels gets an additional $1/3$ to its overall number of picks $c$.
+One of the advantages of this model is that it allows a seamless incorporation of results from multiple picks by using reciprocal weights: if an evaluator identified three panels as the `most different', each of these three panels gets an additional $1/3$ to its overall number of picks $c$.
+\svp{This is an advantage over the frequentist model for this situation because it could not easily accommodate multiple solutions? Need to explicitly compare/explain.}
 
 \begin{figure}
 \centering
@@ -173,7 +192,7 @@ getCounts <- function(response) {
 }
 
 
-bfactor <- function(alpha, counts) {
+bfactors <- function(alpha, counts) {
   x <- seq(0,0.9999, by=0.01)
   bf <- lapply(1:20, function(i) {
     pre <- pbeta(x, shape1=alpha[i], shape2=sum(alpha)-alpha[i],
@@ -198,7 +217,7 @@ pre_post_picks <- function(data) {
     picks = sum(counts[[1]]),
     post_mean = list((alpha + counts[[1]])/sum(alpha + counts[[1]])),
     post_mode = list((alpha + counts[[1]] - 1)/sum(alpha + counts[[1]]-1)),
-    bfactor = list(bfactor(alpha, counts[[1]])),
+    bfactor = list(bfactors(alpha, counts[[1]])),
     pre_prob  = list(pbeta(1/20*2, shape1=alpha, shape2=sum(alpha)-alpha,
                            lower.tail=FALSE)),
     post_prob = list(pbeta(1/20*2, shape1=alpha+counts[[1]],
@@ -304,48 +323,97 @@ For each individual panel of the lineup, the marginal distributions are Beta dis
 
 
 \paragraph{Calculation of the Bayes factor for plot \#$i$}\hfill\newline
-\hh{XXX after discussion with Susan: put a prior uniform on the cutoff threshold $c$ - either integrate it out or find a mode in the posterior.}
+\svp{We need to explain the cutoff threshold a bit more - develop the ``why".}
+\hh{XXX after discussion with Susan: put a prior uniform on the cutoff threshold $t$ - either integrate it out or find a mode in the posterior.}
 \hh{XXX  integration seems to work out really well - what do you think? }
 
-In order to assess the strength of the signal of plot \#$i$, we assess the probability that an observer chooses this plot at a pre-specified level $c$ and compare the posterior probability to its prior for a Bayes factor.
-More formally, we define the Bayes factor of choosing plot \#$i$ given threshold level $c$ as
+In order to assess the strength of the signal of plot \#$i$, we assess the probability that an observer chooses this plot at a pre-specified level $t$ and compare the posterior probability to its prior for a Bayes factor.
+More formally, we define the Bayes factor of choosing plot \#$i$ given threshold level $t$ as
 \[
-B_c(p_i) = \frac{P(p_i > c \mid x, \alpha)}{P(p_i > c \mid \alpha)},
+B_t(p_i) = \frac{P(p_i > t \mid x, \alpha)}{P(p_i > t \mid \alpha)},
 \]
-where $c$ is a pre-specified threshold with $c \in (0,1)$ and $p_i$ is the probability that an observer chooses plot \#$i$, $1 \le i \le m$, as the most different.
-The choice of $c$ is critical: a natural choice would be $c = 1/m$, where $m$ is the size of the lineup. However, the prior probability in a lineup of size 20 is $\Sexpr{round(pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 3)}$. This puts an upper limit on the Bayes factor of $\Sexpr{round(1/pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 2)}$ (the reciprocal value of the prior). A higher threshold allows for a higher upper limit on the Bayes factor, e.g.\ a threshold of $c = \frac{2}{m}$ already allows for a Bayes factor of up to \Sexpr{round(1/pbeta(1/20*2, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE),2)}. For the example shown in Figure~\ref{fig:xpl-104}, the posterior probabilities of picking panels \#11 and \#20 with a probability of at least $c = \frac{2}{m}$ are \Sexpr{round(probs[11],4)} and \Sexpr{round(probs[20],4)}, respectively. This corresponds to Bayes factors of  \Sexpr{round(probs[11]/preprobs[11],2)} and \Sexpr{round(probs[20]/preprobs[20],2)}.
-An overview of the Bayes factors $B_c$ for a specific lineup is shown in Figure~\ref{fig:bc-104}.
+where $t$ is a pre-specified threshold with $t \in (0,1)$ and $p_i$ is the probability that an observer chooses plot \#$i$, $1 \le i \le m$, as the most different.
+\svp{``most different" is a bit of a weird phrase given that we're allowing participants to select multiple panels. Perhaps ``observer selects plot ... as visually distinct"?}
+
+\svp{Is this thing $B_t$ technically a bayes factor any more? I would think so, but I'm not sure...?}
+
+The choice of $t$ is critical: a natural choice would be $t = 1/m$, where $m$ is the size of the lineup. However, the prior probability in a lineup of size 20 is $\Sexpr{round(pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 3)}$ when using the uninformative prior described above. This puts an upper limit on the Bayes factor of $\Sexpr{round(1/pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 2)}$ (the reciprocal value of the prior). A higher threshold allows for a higher upper limit on the Bayes factor, e.g.\ a threshold of $t = \frac{2}{m}$ already allows for a Bayes factor of up to \Sexpr{round(1/pbeta(1/20*2, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE),2)}. For the example shown in Figure~\ref{fig:xpl-104}, the posterior probabilities of picking panels \#11 and \#20 with a probability of at least $t = \frac{2}{m}$ are \Sexpr{round(probs[11],4)} and \Sexpr{round(probs[20],4)}, respectively. This corresponds to Bayes factors of  \Sexpr{round(probs[11]/preprobs[11],2)} and \Sexpr{round(probs[20]/preprobs[20],2)}.
+An overview of the Bayes factors $B_t$ for a specific lineup is shown in Figure~\ref{fig:bt-104}.
 
 \begin{figure}
 \begin{subfigure}[b]{.49\textwidth}
-\caption{\label{fig:lp-104-bc}Example lineup. }
+\caption{\label{fig:lp-104-bt}Example lineup. }
 \includegraphics[width=\textwidth]{lineup-images/34fcf946135adb1c03b147897f20b33d.pdf}
 \end{subfigure}
 \begin{subfigure}[b]{.49\textwidth}
-\caption{\label{fig:bfactor}Bayes factors at each value of $c \in (0,1)$. }
-<<Bfactorc, echo=FALSE, fig.width=7, fig.height=7>>=
+\caption{\label{fig:bfactor}Bayes factors at each value of $t \in (0,1)$. }
+<<Bfactort, echo=FALSE, fig.width=7, fig.height=7>>=
 x <- seq(0,0.9999, by=0.01)
 BFS <- 1:20 %>% lapply(function(i) data.frame(i, x = x, bf=bfs[[i]])) %>% bind_rows
 BFS$capbf <- pmin(BFS$bf, 20)
 qplot(x, capbf,  geom="line", data= BFS) + theme_bw() +
   facet_wrap(facets = ~i) +
-  ylab("Bayes factor at threshold c") +
-  xlab("Threshold c") #+ ylim(c(0,20))
+  ylab("Bayes factor at threshold t") +
+  xlab("Threshold t") #+ ylim(c(0,20))
 @
 \end{subfigure}
-\caption{\label{fig:bc-104} Lineup (left) and Bayes factors at threshold $c$ (right). Note that the Bayes factors for plot \#20 are capped at a value of 20. Uncapped, the Bayes factor for \#20 reaches a mode of over 300. }
+\caption{\label{fig:bt-104} Lineup (left) and Bayes factors at threshold $t$ (right). Note that the Bayes factors for plot \#20 are capped at a value of 20. Uncapped, the Bayes factor for \#20 reaches a mode of over 300. }
 \end{figure}
 
-Instead of deciding for a single value of $c$,
-we integrate over all possible values of $c$ and get the Bayes factor for plot \#$i$ as:
+Instead of deciding for a single value of $t$,
+we integrate over all possible values of $t$ and get the Bayes factor for plot \#$i$ as:
 \[
-B(p_i) = \int_0^1 B_c(p_i) dc = \int_0^1 \frac{P(p_i > c \mid x, \alpha)}{P(p_i > c \mid \alpha)} dc.
+B(p_i) = \int_0^1 B_t(p_i) dc = \int_0^1 \frac{P(p_i > t \mid x, \alpha)}{P(p_i > t \mid \alpha)} dt.
 \]
 
 There are different schemes interpreting the Bayes factor. \citet{jeffreys:1961} consider a factor of 5 to 10 as `substantial', and values above 20 as `decisive'.
 Alternatively, \citet{kass:1995} consider a factor of 6 to 10 as `strong', and values above 10 as `very strong'.
 
 \hh{XXX investigate Bayes factor of different scenarios, ie ten evaluations, different number of data picks and null picks. How does that compare to the visual distribution $V_3$? (the Binomial like distribution that is adjusted for dependencies between the data and the nulls). }
+
+<<bayes-factor-investingation, eval = F>>=
+# Investigate Bayes factor of different scenarios, i.e. 10 evaluations with different number of data picks and null picks.
+
+# Plot 1 = data plot
+
+bf.sim <- 0:10 %>%
+  purrr::map_df(.f = function(i) {
+    1 %>%
+      purrr::map_df(.f = function(j){
+        data.frame(
+          pic_id = paste(i, j, sep = "."),
+          response_no = as.character(c(rep(1, i), sample(2:20, size = (10 - i), replace = T))))
+      })
+  })
+tmp <- pre_post_picks(bf.sim)
+tmp %<>%
+  mutate(data.picks = stringr::str_extract(pic_id, "^\\d{1,}") %>%
+           as.numeric) %>%
+  arrange(data.picks)
+
+counts <- tmp[i, "counts"][[1]][[1]]
+probs <- tmp[i, "post_prob"][[1]][[1]]
+preprobs <- tmp[i, "pre_prob"][[1]][[1]]
+bfactor <- tmp[i, "bfactor"]$bfactor[[1]]$avg
+bfs <- tmp[i, "bfactor"]$bfactor[[1]]$factor
+dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
+
+ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
+
+qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
+      colour=I("grey45"), alpha=I(0.5)) +
+  facet_wrap(~variable) + xlim(c(0,1)) +
+  theme_bw() +
+  xlab("Posterior probability to pick plot") +
+  ggtitle(sprintf("Pic ID %s (based on %.1f picks)", turk19.picks$pic_id[i],
+                  sum(turk19.picks$counts[i][[1]]))) +
+  geom_text(data=dframe, aes(label = Bfactor), x = 1, y = 0.9*ymax, size = 5,
+            colour="grey70", hjust="inward", vjust="inward")
+
+tmp$data.picks <- stringr::str_extract(tmp$pic_id, "^\\d{1,}") %>% as.numeric()
+  tmp.df <- tmp$bfactor
+
+@
 
 \begin{figure}
 \begin{subfigure}[b]{.49\textwidth}
@@ -431,7 +499,9 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
 \caption{\label{fig:xpl-124} Lineup (left) and posterior densities (right) corresponding to evaluations by independent observers.}
 \end{figure}
 
-\hh{XXX can we combine multiple lineups?}
+\hh{can we combine multiple lineups?}
+\svp{You mean compare which plots are most likely to be selected out of several sets of sub-plots? That's an interesting idea, but I'm not sure that there's an obvious way to do that... Unless you just ``integrate" over multiple lineups and selections? That can't be valid, can it?}
+
 \hh{XXX Bayesian equivalent of a logistic regression with random effects, jags? }
 \bibliographystyle{asa}
 \bibliography{references}
