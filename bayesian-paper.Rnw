@@ -363,7 +363,7 @@ qplot(x, capbf,  geom="line", data= BFS) + theme_bw() +
 Instead of deciding for a single value of $t$,
 we integrate over all possible values of $t$ and get the Bayes factor for plot \#$i$ as:
 \[
-B(p_i) = \int_0^1 B_t(p_i) dc = \int_0^1 \frac{P(p_i > t \mid x, \alpha)}{P(p_i > t \mid \alpha)} dt.
+B(p_i) = \int_0^1 B_t(p_i) dt = \int_0^1 \frac{P(p_i > t \mid x, \alpha)}{P(p_i > t \mid \alpha)} dt.
 \]
 
 There are different schemes interpreting the Bayes factor. \citet{jeffreys:1961} consider a factor of 5 to 10 as `substantial', and values above 20 as `decisive'.
