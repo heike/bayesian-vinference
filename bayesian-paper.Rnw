@@ -178,7 +178,7 @@ qplot(value, geom="density", data=lpsm, fill=I("grey50"),
   theme_bw() +
   xlab("Probability to pick plot")
 @
-\caption{\label{fig:prior}General prior for any lineup of size 20. }
+\caption{\label{fig:prior}Jeffreys' noninformative prior for any lineup of size 20. }
 \end{figure}
 
 <<posterior, echo=FALSE, cache = TRUE, warning=FALSE, message=FALSE>>=
