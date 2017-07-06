@@ -146,6 +146,7 @@ The posterior distribution is then as follows:
 c &=& (c_1, ..., c_m) = \text{ number of picks of each plot} \\
 p \mid x, \alpha &\sim& Dir (K, \alpha_1+c_1, \alpha_2+c_2, ..., \alpha_m + c_m)
 \end{eqnarray*}
+\svp{Should this be $p\mid c, \alpha$?}
 \svp{What is $K$? Number of evaluations total? also, since $c$ was used for \# picks, I've changed the threshold $c$ to $t$ below.}
 \svp{Need to adjust notation to account for multiple plot selections somehow. Maybe add that extension below? e.g. let $z_{ij}$ represent the selection of plot $i$ as the $j$th plot selected. Then $p_i$ = $\sum_{j = 1}^{20} z_{ij}/\sum_{j = 1}^{20} (z_{ij} \text{ is not null})$ or something?}
 
