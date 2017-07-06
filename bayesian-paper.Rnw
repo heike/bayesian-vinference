@@ -349,62 +349,75 @@ For each individual panel of the lineup, the marginal distributions are Beta dis
 
 
 \paragraph{Calculation of the Bayes factor for plot \#$i$}\hfill\newline
-\svp{We need to explain the cutoff threshold a bit more - develop the ``why".}
-\hh{XXX after discussion with Susan: put a prior uniform on the cutoff threshold $t$ - either integrate it out or find a mode in the posterior.}
-\hh{XXX  integration seems to work out really well - what do you think? }
+In order to assess the strength of the signal of plot \#$i$, we calculate the Bayes Factor, which assesses the posterior odds of the full model described above relative to a model which has uniform probability of selecting each plot. More formally,
+\begin{eqnarray}
+M_1 & := & \text{Multinomial Dirichlet model with Jeffrey's prior}\\
+M_2 & := & \text{Uniform Dirichlet model (equivalent to Jeffrey's prior)}\\
+BF & = & P(M_1|c)/P(M_2|c)\\
+& = & \frac{\int_{p} P(M_1) f_1(c|p) \pi(p) dp}{}
+\end{eqnarray}
 
-In order to assess the strength of the signal of plot \#$i$, we assess the probability that an observer chooses this plot at a pre-specified level $t$ and compare the posterior probability to its prior for a Bayes factor.
-More formally, we define the Bayes factor of choosing plot \#$i$ given threshold level $t$ as
-\[
-B_t(p_i) = \frac{P(p_i > t \mid x, \alpha)}{P(p_i > t \mid \alpha)},
-\]
-where $t$ is a pre-specified threshold with $t \in (0,1)$ and $p_i$ is the probability that an observer chooses plot \#$i$, $1 \le i \le m$, as the most different.
-\svp{``most different" is a bit of a weird phrase given that we're allowing participants to select multiple panels. Perhaps ``observer selects plot ... as visually distinct"?}
-
-\svp{Is this thing $B_t$ technically a bayes factor any more? I would think so, but I'm not sure...?\\Upon further reflection, for a single value of $t$ it's a Bayes factor over a reduced sample space, I believe. However, it doesn't make that much sense to integrate $t$ out if that's the interpretation; rather, just integrate over the entire parameter space $[0,1]$ instead.}
-
-The choice of $t$ is critical: a natural choice would be $t = 1/m$, where $m$ is the size of the lineup. However, the prior probability in a lineup of size 20 is $\Sexpr{round(pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 3)}$ when using the uninformative prior described above. This puts an upper limit on the Bayes factor of $\Sexpr{round(1/pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 2)}$ (the reciprocal value of the prior). A higher threshold allows for a higher upper limit on the Bayes factor, e.g.\ a threshold of $t = \frac{2}{m}$ already allows for a Bayes factor of up to \Sexpr{round(1/pbeta(1/20*2, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE),2)}. For the example shown in Figure~\ref{fig:xpl-104}, the posterior probabilities of picking panels \#11 and \#20 with a probability of at least $t = \frac{2}{m}$ are \Sexpr{round(probs[11],4)} and \Sexpr{round(probs[20],4)}, respectively. This corresponds to Bayes factors of  \Sexpr{round(probs[11]/preprobs[11],2)} and \Sexpr{round(probs[20]/preprobs[20],2)}.
-An overview of the Bayes factors $B_t$ for a specific lineup is shown in Figure~\ref{fig:bt-104}.
-
-\begin{figure}
-\begin{subfigure}[b]{.49\textwidth}
-\caption{\label{fig:lp-104-bt}Example lineup. }
-\includegraphics[width=\textwidth]{lineup-images/34fcf946135adb1c03b147897f20b33d.pdf}
-\end{subfigure}
-\begin{subfigure}[b]{.49\textwidth}
-\caption{\label{fig:bfactor}Bayes factors at each value of $t \in (0,1)$. }
-<<Bfactort, echo=FALSE, fig.width=7, fig.height=7>>=
-x <- seq(0,0.9999, by=0.01)
-BFS <- 1:20 %>% lapply(function(i) data.frame(i, x = x, bf=bfs[[i]])) %>% bind_rows
-BFS$capbf <- pmin(BFS$bf, 20)
-qplot(x, capbf,  geom="line", data= BFS) + theme_bw() +
-  facet_wrap(facets = ~i) +
-  ylab("Bayes factor at threshold t") +
-  xlab("Threshold t") #+ ylim(c(0,20))
-@
-\end{subfigure}
-\caption{\label{fig:bt-104} Lineup (left) and Bayes factors at threshold $t$ (right). Note that the Bayes factors for plot \#20 are capped at a value of 20. Uncapped, the Bayes factor for \#20 reaches a mode of over 300. }
-\end{figure}
-
-Instead of deciding for a single value of $t$,
-we integrate over all possible values of $t$ and get the Bayes factor for plot \#$i$ as:
-\[
-B(p_i) = \int_0^1 B_t(p_i) dt = \int_0^1 \frac{P(p_i > t \mid x, \alpha)}{P(p_i > t \mid \alpha)} dt.
-\]
+%
+% \svp{We need to explain the cutoff threshold a bit more - develop the ``why".}
+% \hh{XXX after discussion with Susan: put a prior uniform on the cutoff threshold $t$ - either integrate it out or find a mode in the posterior.}
+% \hh{XXX  integration seems to work out really well - what do you think? }
+%
+% In order to assess the strength of the signal of plot \#$i$, we assess the probability that an observer chooses this plot at a pre-specified level $t$ and compare the posterior probability to its prior for a Bayes factor.
+% More formally, we define the Bayes factor of choosing plot \#$i$ given threshold level $t$ as
+% \[
+% B_t(p_i) = \frac{P(p_i > t \mid x, \alpha)}{P(p_i > t \mid \alpha)},
+% \]
+% where $t$ is a pre-specified threshold with $t \in (0,1)$ and $p_i$ is the probability that an observer chooses plot \#$i$, $1 \le i \le m$, as the most different.
+% \svp{``most different" is a bit of a weird phrase given that we're allowing participants to select multiple panels. Perhaps ``observer selects plot ... as visually distinct"?}
+%
+% \svp{Is this thing $B_t$ technically a bayes factor any more? I would think so, but I'm not sure...?\\Upon further reflection, for a single value of $t$ it's a Bayes factor over a reduced sample space, I believe. However, it doesn't make that much sense to integrate $t$ out if that's the interpretation; rather, just integrate over the entire parameter space $[0,1]$ instead.}
+%
+% The choice of $t$ is critical: a natural choice would be $t = 1/m$, where $m$ is the size of the lineup. However, the prior probability in a lineup of size 20 is $\Sexpr{round(pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 3)}$ when using the uninformative prior described above. This puts an upper limit on the Bayes factor of $\Sexpr{round(1/pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 2)}$ (the reciprocal value of the prior). A higher threshold allows for a higher upper limit on the Bayes factor, e.g.\ a threshold of $t = \frac{2}{m}$ already allows for a Bayes factor of up to \Sexpr{round(1/pbeta(1/20*2, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE),2)}. For the example shown in Figure~\ref{fig:xpl-104}, the posterior probabilities of picking panels \#11 and \#20 with a probability of at least $t = \frac{2}{m}$ are \Sexpr{round(probs[11],4)} and \Sexpr{round(probs[20],4)}, respectively. This corresponds to Bayes factors of  \Sexpr{round(probs[11]/preprobs[11],2)} and \Sexpr{round(probs[20]/preprobs[20],2)}.
+% An overview of the Bayes factors $B_t$ for a specific lineup is shown in Figure~\ref{fig:bt-104}.
+%
+% \begin{figure}
+% \begin{subfigure}[b]{.49\textwidth}
+% \caption{\label{fig:lp-104-bt}Example lineup. }
+% \includegraphics[width=\textwidth]{lineup-images/34fcf946135adb1c03b147897f20b33d.pdf}
+% \end{subfigure}
+% \begin{subfigure}[b]{.49\textwidth}
+% \caption{\label{fig:bfactor}Bayes factors at each value of $t \in (0,1)$. }
+% <<Bfactort, echo=FALSE, fig.width=7, fig.height=7>>=
+% x <- seq(0,0.9999, by=0.01)
+% BFS <- 1:20 %>% lapply(function(i) data.frame(i, x = x, bf=bfs[[i]])) %>% bind_rows
+% BFS$capbf <- pmin(BFS$bf, 20)
+% qplot(x, capbf,  geom="line", data= BFS) + theme_bw() +
+%   facet_wrap(facets = ~i) +
+%   ylab("Bayes factor at threshold t") +
+%   xlab("Threshold t") #+ ylim(c(0,20))
+% @
+% \end{subfigure}
+% \caption{\label{fig:bt-104} Lineup (left) and Bayes factors at threshold $t$ (right). Note that the Bayes factors for plot \#20 are capped at a value of 20. Uncapped, the Bayes factor for \#20 reaches a mode of over 300. }
+% \end{figure}
+%
+% Instead of deciding for a single value of $t$,
+% we integrate over all possible values of $t$ and get the Bayes factor for plot \#$i$ as:
+% \[
+% B(p_i) = \int_0^1 B_t(p_i) dt = \int_0^1 \frac{P(p_i > t \mid x, \alpha)}{P(p_i > t \mid \alpha)} dt.
+% \]
 
 There are different schemes interpreting the Bayes factor. \citet{jeffreys:1961} consider a factor of 5 to 10 as `substantial', and values above 20 as `decisive'.
 Alternatively, \citet{kass:1995} consider a factor of 6 to 10 as `strong', and values above 10 as `very strong'.
-
+\FloatBarrier
 \hh{XXX investigate Bayes factor of different scenarios, ie ten evaluations, different number of data picks and null picks. How does that compare to the visual distribution $V_3$? (the Binomial like distribution that is adjusted for dependencies between the data and the nulls). }
+<<bayes-factor-investigation-params, echo = F>>=
+Nruns <- 400
+Npicks <- 20
+@
+We simulated bayes factors arising from the following scenario: Out of \Sexpr{Npicks} evaluations, the target plot was selected $x$ times (null plot selections were randomly generated with $\Sexpr{Npicks}-x$ total selections of null plots). For each value of $x$, this simulation was run \Sexpr{Nruns} times, and the results are shown in Figure \ref{fig:bayes-factor-investigation-Target} (target plot bayes factors) and Figure \ref{fig:bayes-factor-investigation-Null} (null plot bayes factors). The target plot bayes factors were identical across all \Sexpr{Nruns} simulation runs, but the null plot bayes factors were not, as a result, the target bayes factor plot shows a clear linear relationship, while the null bayes factor plot shows a series of boxplots representing the distribution of bayes factors for each of 19 null plots in each of \Sexpr{Nruns} simulation runs with $x$ between 0 and \Sexpr{Npicks}.
 
-<<bayes-factor-investingation, echo = F>>=
+<<bayes-factor-investigation, echo = F>>=
 # Investigate Bayes factor of different scenarios, i.e. 10 evaluations with different number of data picks and null picks.
 library(purrr)
 # Plot 1 = data plot
-Npicks <- 20
 bf.sim <- 0:Npicks %>%
   map_df(.f = function(i) {
-    1:400 %>%
+    1:Nruns %>%
       map_df(.f = function(j){
         data.frame(
           pic_id = sprintf("%02d.%02d", i, j),
