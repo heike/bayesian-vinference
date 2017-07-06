@@ -231,7 +231,7 @@ bfactors.fix <- function(alpha, counts) {
   # bfavg <- bf %>% lapply(sum) %>% unlist
   # bfmode <- bf %>% lapply(max) %>% unlist
 
-  list(avg = bf)
+  bf
 }
 
 pre_post_picks <- function(data) {
@@ -278,13 +278,14 @@ turk1013.picks <- pre_post_picks(turk1013)
 i <- 1
 
 lpsXXX <- data.frame(rdirichlet(5000, alpha+turk1013.picks$counts[i][[1]]))
-lpsXXXm <- melt(lpsXXX, measure.var=1:20)
+lpsXXXm <- gather(lpsXXX, key = "variable")
 lpsXXXm$variable <- as.numeric(gsub("X", "", lpsXXXm$variable))
 
 counts <- turk1013.picks[i, "counts"][[1]][[1]]
 #probs <- turk1013.picks[i, "post_prob"][[1]][[1]]
 #preprobs <- turk1013.picks[i, "pre_prob"][[1]][[1]]
-bfactor <- turk1013.picks[i, "bfactor"]$bfactor[[1]]$avg
+# bfactor <- turk1013.picks[i, "bfactor"]$bfactor[[1]]$avg
+bfactor <- turk1013.picks[i, "bfactor.fix"]$bfactor.fix[[1]] %>% unlist()
 dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
@@ -318,13 +319,14 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
 i <- 1
 
 lpsXXX <- data.frame(rdirichlet(5000, alpha+turk19.picks$counts[i][[1]]))
-lpsXXXm <- melt(lpsXXX, measure.var=1:20)
+lpsXXXm <- gather(lpsXXX, key = "variable")
 lpsXXXm$variable <- as.numeric(gsub("X", "", lpsXXXm$variable))
 
 counts <- turk19.picks[i, "counts"][[1]][[1]]
 probs <- turk19.picks[i, "post_prob"][[1]][[1]]
 preprobs <- turk19.picks[i, "pre_prob"][[1]][[1]]
-bfactor <- turk19.picks[i, "bfactor"]$bfactor[[1]]$avg
+# bfactor <- turk19.picks[i, "bfactor"]$bfactor[[1]]$avg
+bfactor <- turk19.picks[i, "bfactor.fix"]$bfactor.fix[[1]] %>% unlist()
 bfs <- turk19.picks[i, "bfactor"]$bfactor[[1]]$factor
 dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
@@ -475,13 +477,14 @@ rm(tmp, bf, bf.sim)
 i <- 2
 
 lpsXXX <- data.frame(rdirichlet(5000, alpha+turk19.picks$counts[i][[1]]))
-lpsXXXm <- melt(lpsXXX, measure.var=1:20)
+lpsXXXm <- gather(lpsXXX, key = "variable")
 lpsXXXm$variable <- as.numeric(gsub("X", "", lpsXXXm$variable))
 
 counts <- turk19.picks[i, "counts"][[1]][[1]]
 #probs <- turk19.picks[i, "post_prob"][[1]][[1]]
 #preprobs <- turk19.picks[i, "pre_prob"][[1]][[1]]
-bfactor <- turk19.picks[i, "bfactor"]$bfactor[[1]]$avg
+# bfactor <- turk19.picks[i, "bfactor"]$bfactor[[1]]$avg
+bfactor <- turk19.picks[i, "bfactor.fix"]$bfactor.fix[[1]] %>% unlist()
 dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
@@ -520,13 +523,14 @@ samedata <- subset(pics16, data_name == dname)
 i <- subset(samedata, test_param == "turk16-colorEllipse")$pic_id
 
 lpsXXX <- data.frame(rdirichlet(5000, alpha+turk16.picks$counts[i][[1]]))
-lpsXXXm <- melt(lpsXXX, measure.var=1:20)
+lpsXXXm <- gather(lpsXXX, key = "variable")
 lpsXXXm$variable <- as.numeric(gsub("X", "", lpsXXXm$variable))
 
 counts <- turk16.picks[i, "counts"][[1]][[1]]
 #probs <- turk16.picks[i, "post_prob"][[1]][[1]]
 #preprobs <- turk16.picks[i, "pre_prob"][[1]][[1]]
-bfactor <- turk16.picks[i, "bfactor"]$bfactor[[1]]$avg
+# bfactor <- turk16.picks[i, "bfactor"]$bfactor[[1]]$avg
+bfactor <- turk16.picks[i, "bfactor.fix"]$bfactor.fix[[1]] %>% unlist()
 dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
