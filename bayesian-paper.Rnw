@@ -194,7 +194,7 @@ getCounts <- function(response) {
 
 
 bfactors <- function(alpha, counts) {
-  x <- seq(0,0.9999, by=0.01)
+  x <- seq(0,1, by=0.001)
   bf <- lapply(1:20, function(i) {
     pre <- pbeta(x, shape1=alpha[i], shape2=sum(alpha)-alpha[i],
                            lower.tail=FALSE)
@@ -203,11 +203,35 @@ bfactors <- function(alpha, counts) {
                 lower.tail=FALSE)
     post/pre
   })
+  # As written, this doesn't have a threshold.
+  # Also, bayes factors are the posterior of two different models integrated over the parameter space.
+  # So I suspect we should sum first then divide.
+
   # now get averages
   bfavg <- bf %>% lapply(sum) %>% unlist
   bfmode <- bf %>% lapply(max) %>% unlist
 
   list(avg = bfavg/length(x), mode = bfmode, factor = bf)
+}
+
+bfactors.fix <- function(alpha, counts) {
+  x <- seq(0,1, by=0.001)
+  bf <- lapply(1:20, function(i) {
+    pre <- pbeta(x, shape1=alpha[i], shape2=sum(alpha)-alpha[i],
+                           lower.tail=FALSE)
+    post <- pbeta(x, shape1=alpha[i]+counts[i],
+                shape2=sum(alpha)-alpha[i] + sum(counts) - counts[i],
+                lower.tail=FALSE)
+    sum(post)/sum(pre)
+  })
+  # As written, this doesn't have a threshold.
+  # This version sums first and then divides.
+
+  # now get averages
+  # bfavg <- bf %>% lapply(sum) %>% unlist
+  # bfmode <- bf %>% lapply(max) %>% unlist
+
+  list(avg = bf)
 }
 
 pre_post_picks <- function(data) {
@@ -219,6 +243,7 @@ pre_post_picks <- function(data) {
     post_mean = list((alpha + counts[[1]])/sum(alpha + counts[[1]])),
     post_mode = list((alpha + counts[[1]] - 1)/sum(alpha + counts[[1]]-1)),
     bfactor = list(bfactors(alpha, counts[[1]])),
+    bfactor.fix = list(bfactors.fix(alpha, counts[[1]])),
     pre_prob  = list(pbeta(1/20*2, shape1=alpha, shape2=sum(alpha)-alpha,
                            lower.tail=FALSE)),
     post_prob = list(pbeta(1/20*2, shape1=alpha+counts[[1]],
