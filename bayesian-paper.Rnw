@@ -336,7 +336,7 @@ B_t(p_i) = \frac{P(p_i > t \mid x, \alpha)}{P(p_i > t \mid \alpha)},
 where $t$ is a pre-specified threshold with $t \in (0,1)$ and $p_i$ is the probability that an observer chooses plot \#$i$, $1 \le i \le m$, as the most different.
 \svp{``most different" is a bit of a weird phrase given that we're allowing participants to select multiple panels. Perhaps ``observer selects plot ... as visually distinct"?}
 
-\svp{Is this thing $B_t$ technically a bayes factor any more? I would think so, but I'm not sure...?}
+\svp{Is this thing $B_t$ technically a bayes factor any more? I would think so, but I'm not sure...?\\Upon further reflection, for a single value of $t$ it's a Bayes factor over a reduced sample space, I believe. However, it doesn't make that much sense to integrate $t$ out if that's the interpretation; rather, just integrate over the entire parameter space $[0,1]$ instead.}
 
 The choice of $t$ is critical: a natural choice would be $t = 1/m$, where $m$ is the size of the lineup. However, the prior probability in a lineup of size 20 is $\Sexpr{round(pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 3)}$ when using the uninformative prior described above. This puts an upper limit on the Bayes factor of $\Sexpr{round(1/pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 2)}$ (the reciprocal value of the prior). A higher threshold allows for a higher upper limit on the Bayes factor, e.g.\ a threshold of $t = \frac{2}{m}$ already allows for a Bayes factor of up to \Sexpr{round(1/pbeta(1/20*2, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE),2)}. For the example shown in Figure~\ref{fig:xpl-104}, the posterior probabilities of picking panels \#11 and \#20 with a probability of at least $t = \frac{2}{m}$ are \Sexpr{round(probs[11],4)} and \Sexpr{round(probs[20],4)}, respectively. This corresponds to Bayes factors of  \Sexpr{round(probs[11]/preprobs[11],2)} and \Sexpr{round(probs[20]/preprobs[20],2)}.
 An overview of the Bayes factors $B_t$ for a specific lineup is shown in Figure~\ref{fig:bt-104}.
@@ -372,18 +372,18 @@ Alternatively, \citet{kass:1995} consider a factor of 6 to 10 as `strong', and v
 
 \hh{XXX investigate Bayes factor of different scenarios, ie ten evaluations, different number of data picks and null picks. How does that compare to the visual distribution $V_3$? (the Binomial like distribution that is adjusted for dependencies between the data and the nulls). }
 
-<<bayes-factor-investingation, eval = F>>=
+<<bayes-factor-investingation, echo = F>>=
 # Investigate Bayes factor of different scenarios, i.e. 10 evaluations with different number of data picks and null picks.
-
+library(purrr)
 # Plot 1 = data plot
-
-bf.sim <- 0:10 %>%
-  purrr::map_df(.f = function(i) {
-    1 %>%
-      purrr::map_df(.f = function(j){
+Npicks <- 20
+bf.sim <- 0:Npicks %>%
+  map_df(.f = function(i) {
+    1:400 %>%
+      map_df(.f = function(j){
         data.frame(
-          pic_id = paste(i, j, sep = "."),
-          response_no = as.character(c(rep(1, i), sample(2:20, size = (10 - i), replace = T))))
+          pic_id = sprintf("%02d.%02d", i, j),
+          response_no = as.character(c(rep(1, i), sample(2:20, size = (Npicks - i), replace = T))))
       })
   })
 tmp <- pre_post_picks(bf.sim)
@@ -392,28 +392,43 @@ tmp %<>%
            as.numeric) %>%
   arrange(data.picks)
 
-counts <- tmp[i, "counts"][[1]][[1]]
-probs <- tmp[i, "post_prob"][[1]][[1]]
-preprobs <- tmp[i, "pre_prob"][[1]][[1]]
-bfactor <- tmp[i, "bfactor"]$bfactor[[1]]$avg
-bfs <- tmp[i, "bfactor"]$bfactor[[1]]$factor
-dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
+# Get bayes factors for signal and null plots out
+bf <- 1:nrow(tmp) %>%
+  map_df(.f = function(i) {
+    x <- tmp[i,]
+    data_frame(
+      pic_id = x[["pic_id"]],
+      type = c("target", rep("null", 19)),
+      bf = unlist(x$bfactor[[1]]$avg))
+  }) %>%
+  mutate(
+    target_picks = stringr::str_extract(pic_id, "^\\d{2}") %>% as.numeric()
+  )
+@
+<<bayes-factor-investigation-TargetCloseup, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factor for the target plot in a 20 plot lineup, where the lineup is evaluated by  %d individuals. The bayes factors are truncated at 20 to show the initial exponential increase in bayes factor with increasing target plot selections.", Npicks)>>=
+ggplot(data = filter(bf, type == "target") %>% select(-pic_id) %>% unique()) +
+  geom_line(aes(x = target_picks, y = pmin(20, bf))) +
+  xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
+  ylab("Bayes Factor of Target Plot") +
+  ggtitle("Change in Bayes Factor of Target Plots with Increasing Signal")
+@
+<<bayes-factor-investigation-Target, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factor for the target plot in a 20 plot lineup, where the lineup is evaluated by  %d individuals. The y-axis scale is logarithmic because the bayes factor increases approximately exponentially with increasing signal strength.", Npicks)>>=
+ggplot(data = filter(bf, type == "target") %>% select(-pic_id) %>% unique()) +
+  geom_line(aes(x = target_picks, y = bf)) +
+  scale_y_log10() +
+  xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
+  ylab("Bayes Factor of Target Plot") +
+  ggtitle("Change in Bayes Factor of Target Plots with Increasing Signal")
+@
+<<bayes-factor-investigation-Null, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factors for the null plots in a 20 plot lineup, where the lineup is evaluated by  %d individuals. The Bayes Factors of the null plots decrease with increasing number of target selections.", Npicks)>>=
 
-ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
+ggplot(data = filter(bf, type == "null") %>% select(-pic_id) %>% unique()) +
+  geom_boxplot(aes(x = factor(target_picks), y = bf)) +
+  xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
+  ylab("Bayes Factor of Null Plots") +
+  ggtitle("Change in Bayes Factor of Null Plots with Increasing Signal")
 
-qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
-      colour=I("grey45"), alpha=I(0.5)) +
-  facet_wrap(~variable) + xlim(c(0,1)) +
-  theme_bw() +
-  xlab("Posterior probability to pick plot") +
-  ggtitle(sprintf("Pic ID %s (based on %.1f picks)", turk19.picks$pic_id[i],
-                  sum(turk19.picks$counts[i][[1]]))) +
-  geom_text(data=dframe, aes(label = Bfactor), x = 1, y = 0.9*ymax, size = 5,
-            colour="grey70", hjust="inward", vjust="inward")
-
-tmp$data.picks <- stringr::str_extract(tmp$pic_id, "^\\d{1,}") %>% as.numeric()
-  tmp.df <- tmp$bfactor
-
+rm(tmp, bf, bf.sim)
 @
 
 \begin{figure}
