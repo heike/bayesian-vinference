@@ -437,31 +437,24 @@ bf <- 1:nrow(tmp) %>%
     data_frame(
       pic_id = x[["pic_id"]],
       type = c("target", rep("null", 19)),
-      bf = unlist(x$bfactor[[1]]$avg))
+      bf = unlist(x$bfactor.fix[[1]]))
   }) %>%
   mutate(
     target_picks = stringr::str_extract(pic_id, "^\\d{2}") %>% as.numeric()
   )
 @
-<<bayes-factor-investigation-TargetCloseup, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factor for the target plot in a 20 plot lineup, where the lineup is evaluated by  %d individuals. The bayes factors are truncated at 20 to show the initial exponential increase in bayes factor with increasing target plot selections.", Npicks)>>=
+<<bayes-factor-investigation-Target, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factor for the target plot in a 20 plot lineup, where the lineup is evaluated by  %d individuals.", Npicks)>>=
 ggplot(data = filter(bf, type == "target") %>% select(-pic_id) %>% unique()) +
   geom_line(aes(x = target_picks, y = pmin(20, bf))) +
   xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
   ylab("Bayes Factor of Target Plot") +
   ggtitle("Change in Bayes Factor of Target Plots with Increasing Signal")
 @
-<<bayes-factor-investigation-Target, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factor for the target plot in a 20 plot lineup, where the lineup is evaluated by  %d individuals. The y-axis scale is logarithmic because the bayes factor increases approximately exponentially with increasing signal strength.", Npicks)>>=
-ggplot(data = filter(bf, type == "target") %>% select(-pic_id) %>% unique()) +
-  geom_line(aes(x = target_picks, y = bf)) +
-  scale_y_log10() +
-  xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
-  ylab("Bayes Factor of Target Plot") +
-  ggtitle("Change in Bayes Factor of Target Plots with Increasing Signal")
-@
+
 <<bayes-factor-investigation-Null, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factors for the null plots in a 20 plot lineup, where the lineup is evaluated by  %d individuals. The Bayes Factors of the null plots decrease with increasing number of target selections.", Npicks)>>=
 
 ggplot(data = filter(bf, type == "null") %>% select(-pic_id) %>% unique()) +
-  geom_boxplot(aes(x = factor(target_picks), y = bf)) +
+  geom_boxplot(aes(x = target_picks, y = bf, group = cut_width(target_picks, 1))) +
   xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
   ylab("Bayes Factor of Null Plots") +
   ggtitle("Change in Bayes Factor of Null Plots with Increasing Signal")
