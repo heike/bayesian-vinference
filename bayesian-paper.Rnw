@@ -188,9 +188,10 @@ library(ggplot2)
 
 m <- 20
 alpha <- rep(1/2, m)
+alpha_2 <- rep(20, m)
 lps <- data.frame(rdirichlet(5000, alpha))
 
-lpsm <- melt(lps, measure.var=1:20)
+lpsm <- gather(lps, key = "variable")
 lpsm$variable <- as.numeric(gsub("X", "", lpsm$variable))
 
 qplot(value, geom="density", data=lpsm, fill=I("grey50"),
@@ -213,38 +214,17 @@ getCounts <- function(response) {
   as.vector(counts)
 }
 
-
-bfactors <- function(alpha, counts) {
+bfactors <- function(a1, a2, counts) {
   x <- seq(0,1, by=0.001)
   bf <- lapply(1:20, function(i) {
-    pre <- pbeta(x, shape1=alpha[i], shape2=sum(alpha)-alpha[i],
-                           lower.tail=FALSE)
-    post <- pbeta(x, shape1=alpha[i]+counts[i],
-                shape2=sum(alpha)-alpha[i] + sum(counts) - counts[i],
+    m2 <- pbeta(x, shape1 = a2[i] + counts,
+                shape2 = sum(a2) - a2[i] + sum(counts) - counts[i],
                 lower.tail=FALSE)
-    post/pre
-  })
-  # As written, this doesn't have a threshold.
-  # Also, bayes factors are the posterior of two different models integrated over the parameter space.
-  # So I suspect we should sum first then divide.
-
-  # now get averages
-  bfavg <- bf %>% lapply(sum) %>% unlist
-  bfmode <- bf %>% lapply(max) %>% unlist
-
-  list(avg = bfavg/length(x), mode = bfmode, factor = bf)
-}
-
-bfactors.fix <- function(alpha, counts) {
-  x <- seq(0,1, by=0.001)
-  bf <- lapply(1:20, function(i) {
-    pre <- pbeta(x, shape1=alpha[i], shape2=sum(alpha)-alpha[i], lower.tail=FALSE)
-    post <- pbeta(x, shape1=alpha[i]+counts[i],
-                shape2=sum(alpha)-alpha[i] + sum(counts) - counts[i],
+    m1 <- pbeta(x, shape1=a1[i] + counts[i],
+                shape2 = sum(a1) - a1[i] + sum(counts) - counts[i],
                 lower.tail=FALSE)
-    sum(post)/sum(pre)
+    sum(m1)/sum(m2)
   })
-  # As written, this doesn't have a threshold.
   # This version sums first and then divides.
 
   # now get averages
@@ -262,8 +242,7 @@ pre_post_picks <- function(data) {
     picks = sum(counts[[1]]),
     post_mean = list((alpha + counts[[1]])/sum(alpha + counts[[1]])),
     post_mode = list((alpha + counts[[1]] - 1)/sum(alpha + counts[[1]]-1)),
-    bfactor = list(bfactors(alpha, counts[[1]])),
-    bfactor.fix = list(bfactors.fix(alpha, counts[[1]])),
+    bfactor = list(bfactors(alpha, alpha_2, counts[[1]])),
     pre_prob  = list(pbeta(1/20*2, shape1=alpha, shape2=sum(alpha)-alpha,
                            lower.tail=FALSE)),
     post_prob = list(pbeta(1/20*2, shape1=alpha+counts[[1]],
@@ -305,7 +284,7 @@ counts <- turk1013.picks[i, "counts"][[1]][[1]]
 #probs <- turk1013.picks[i, "post_prob"][[1]][[1]]
 #preprobs <- turk1013.picks[i, "pre_prob"][[1]][[1]]
 # bfactor <- turk1013.picks[i, "bfactor"]$bfactor[[1]]$avg
-bfactor <- turk1013.picks[i, "bfactor.fix"]$bfactor.fix[[1]] %>% unlist()
+bfactor <- turk1013.picks[i, "bfactor"]$bfactor[[1]] %>% unlist()
 dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
@@ -346,7 +325,7 @@ counts <- turk19.picks[i, "counts"][[1]][[1]]
 probs <- turk19.picks[i, "post_prob"][[1]][[1]]
 preprobs <- turk19.picks[i, "pre_prob"][[1]][[1]]
 # bfactor <- turk19.picks[i, "bfactor"]$bfactor[[1]]$avg
-bfactor <- turk19.picks[i, "bfactor.fix"]$bfactor.fix[[1]] %>% unlist()
+bfactor <- turk19.picks[i, "bfactor"]$bfactor[[1]] %>% unlist()
 bfs <- turk19.picks[i, "bfactor"]$bfactor[[1]]$factor
 dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
@@ -374,25 +353,46 @@ For each individual panel of the lineup, the marginal distributions are Beta dis
 In order to assess the strength of the signal of plot \#$i$, we calculate the Bayes Factor, which assesses the posterior odds of the full model described above relative to a model which has uniform probability of selecting each plot. These Bayes factors are calculated using the marginal distribution which compares each single plot to the collective "other"; the marginal distributions reduce to a Beta-Binomial model. More formally,
 \begin{align}
 M_1 & :=  \text{Beta-Binomial model with Jeffrey's prior}\nonumber\\
-M_2 & :=  \text{Beta model (equivalent to Jeffrey's prior)}\nonumber\\
+M_2 & :=  \text{Beta-Binomial model with strong prior, mass around }\alpha = 0.05\nonumber\\
 BF & =  P(M_1|c)/P(M_2|c)\\
 & =  \frac{\int_{p} P(M_1) f_1(c|p) \pi(p) dp}{\int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber
 \end{align}
 
-This calculation allows us to not only assess the strength of the observers' preference for each panel relative to the uniform probability model; in a two-target lineup, the bayes factors for each target plot can be used to calculate a bayes factor which assesses the strength of the two competing alternative hypotheses. If we consider the marginal distribution for each target plot individually, we calculate separate bayes factors for each target plot.
+What remains is to set the parameters for model 2 so that the strong prior belief that all plots are equally likely to be selected is reflected in the model. We decided to use a Dirichlet distribution with extremely large $\alpha$ = 20, which would be the equivalent of pre-specifying 20 selections of each sub-plot. This distribution has marginal distributions equivalent to the Beta(20, 380) distribution, which has a mean of 0.05 and standard deviation of \Sexpr{round(sqrt((20*380)/(400^2*401)), 3)}.
 
-\begin{align}
-M_{11} & :=  \text{Beta-Binomial model with Jeffrey's prior, for target plot 1}\nonumber\\
-M_{12} & :=  \text{Beta-Binomial model with Jeffrey's prior, for target plot 2}\nonumber\\
-M_2 & :=  \text{Beta model (equivalent to Jeffrey's prior)}\nonumber\\
-BF_1 & =  P(M_{11}|c)/P(M_2|c)\nonumber\\
-& =  \frac{\int_{p} P(M_{11}) f_1(c|p) \pi(p) dp}{\int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber\\
-BF_2 & =  P(M_{12}|c)/P(M_2|c)\nonumber\\
-& =  \frac{\int_{p} P(M_{12}) f_1(c|p) \pi(p) dp}{\int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber\\
-BF_{1,2} & =  BF_1/BF_2\\
-& =  \frac{\int_{p} P(M_{11}) f_1(c|p) \pi(p) dp/ \int_p P(M_2) f_2(c|p)\pi(p) dp}{\int_{p} P(M_{12}) f_1(c|p) \pi(p) dp / \int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber
-& =  \frac{\int_{p} P(M_{11}) f_1(c|p) \pi(p) dp}{\int_{p} P(M_{12}) f_1(c|p) \pi(p) dp}\nonumber
-\end{align}
+\begin{figure}
+\centering
+<<prior-model2, echo=FALSE, fig.width = 8, fig.height = 8, out.width='0.7\\textwidth'>>=
+m <- 20
+lps <- data.frame(rdirichlet(5000, alpha_2))
+
+lpsm <- gather(lps, key = "variable")
+lpsm$variable <- as.numeric(gsub("X", "", lpsm$variable))
+
+qplot(value, geom="density", data=lpsm, fill=I("grey50"),
+      colour=I("grey45"), alpha=I(0.5)) +
+  facet_wrap(~variable) + xlim(c(0,1)) +
+  theme_bw() +
+  xlab("Probability to pick plot")
+@
+\caption{\label{fig:prior-model2}A strongly informative prior for any lineup of size 20 which reflects the belief that all sub-plots are equally likely to be selected. }
+\end{figure}
+
+
+% This calculation allows us to not only assess the strength of the observers' preference for each panel relative to the uniform probability model; in a two-target lineup, the bayes factors for each target plot can be used to calculate a bayes factor which assesses the strength of the two competing alternative hypotheses. If we consider the marginal distribution for each target plot individually, we calculate separate bayes factors for each target plot.
+%
+% \begin{align}
+% M_{11} & :=  \text{Beta-Binomial model with Jeffrey's prior, for target plot 1}\nonumber\\
+% M_{12} & :=  \text{Beta-Binomial model with Jeffrey's prior, for target plot 2}\nonumber\\
+% M_2 & :=  \text{Beta model (equivalent to Jeffrey's prior)}\nonumber\\
+% BF_1 & =  P(M_{11}|c)/P(M_2|c)\nonumber\\
+% & =  \frac{\int_{p} P(M_{11}) f_1(c|p) \pi(p) dp}{\int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber\\
+% BF_2 & =  P(M_{12}|c)/P(M_2|c)\nonumber\\
+% & =  \frac{\int_{p} P(M_{12}) f_1(c|p) \pi(p) dp}{\int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber\\
+% BF_{1,2} & =  BF_1/BF_2\\
+% & =  \frac{\int_{p} P(M_{11}) f_1(c|p) \pi(p) dp/ \int_p P(M_2) f_2(c|p)\pi(p) dp}{\int_{p} P(M_{12}) f_1(c|p) \pi(p) dp / \int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber
+% & =  \frac{\int_{p} P(M_{11}) f_1(c|p) \pi(p) dp}{\int_{p} P(M_{12}) f_1(c|p) \pi(p) dp}\nonumber
+% \end{align}
 
 %
 % \svp{We need to explain the cutoff threshold a bit more - develop the ``why".}
@@ -443,8 +443,8 @@ Alternatively, \citet{kass:1995} consider a factor of 6 to 10 as `strong', and v
 \FloatBarrier
 \hh{XXX investigate Bayes factor of different scenarios, ie ten evaluations, different number of data picks and null picks. How does that compare to the visual distribution $V_3$? (the Binomial like distribution that is adjusted for dependencies between the data and the nulls). }
 <<bayes-factor-investigation-params, echo = F>>=
-Nruns <- 400
-Npicks <- 20
+Nruns <- 200
+Npicks <- 40
 @
 We simulated bayes factors arising from the following scenario: Out of \Sexpr{Npicks} evaluations, the target plot was selected $x$ times (null plot selections were randomly generated with $\Sexpr{Npicks}-x$ total selections of null plots). For each value of $x$, this simulation was run \Sexpr{Nruns} times, and the results are shown in Figure \ref{fig:bayes-factor-investigation-Target} (target plot bayes factors) and Figure \ref{fig:bayes-factor-investigation-Null} (null plot bayes factors). The target plot bayes factors were identical across all \Sexpr{Nruns} simulation runs, but the null plot bayes factors were not, as a result, the target bayes factor plot shows a clear linear relationship, while the null bayes factor plot shows a series of boxplots representing the distribution of bayes factors for each of 19 null plots in each of \Sexpr{Nruns} simulation runs with $x$ between 0 and \Sexpr{Npicks}.
 
@@ -474,7 +474,7 @@ bf <- 1:nrow(tmp) %>%
     data_frame(
       pic_id = x[["pic_id"]],
       type = c("target", rep("null", 19)),
-      bf = unlist(x$bfactor.fix[[1]]))
+      bf = unlist(x$bfactor[[1]]))
   }) %>%
   mutate(
     target_picks = stringr::str_extract(pic_id, "^\\d{2}") %>% as.numeric()
@@ -482,7 +482,7 @@ bf <- 1:nrow(tmp) %>%
 @
 <<bayes-factor-investigation-Target, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factor for the target plot in a 20 plot lineup, where the lineup is evaluated by  %d individuals.", Npicks)>>=
 ggplot(data = filter(bf, type == "target") %>% select(-pic_id) %>% unique()) +
-  geom_line(aes(x = target_picks, y = pmin(20, bf))) +
+  geom_line(aes(x = target_picks, y = bf)) +
   xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
   ylab("Bayes Factor of Target Plot") +
   ggtitle("Change in Bayes Factor of Target Plots with Increasing Signal")
@@ -519,7 +519,7 @@ counts <- turk19.picks[i, "counts"][[1]][[1]]
 #probs <- turk19.picks[i, "post_prob"][[1]][[1]]
 #preprobs <- turk19.picks[i, "pre_prob"][[1]][[1]]
 # bfactor <- turk19.picks[i, "bfactor"]$bfactor[[1]]$avg
-bfactor <- turk19.picks[i, "bfactor.fix"]$bfactor.fix[[1]] %>% unlist()
+bfactor <- turk19.picks[i, "bfactor"]$bfactor[[1]] %>% unlist()
 dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
@@ -565,7 +565,7 @@ counts <- turk16.picks[i, "counts"][[1]][[1]]
 #probs <- turk16.picks[i, "post_prob"][[1]][[1]]
 #preprobs <- turk16.picks[i, "pre_prob"][[1]][[1]]
 # bfactor <- turk16.picks[i, "bfactor"]$bfactor[[1]]$avg
-bfactor <- turk16.picks[i, "bfactor.fix"]$bfactor.fix[[1]] %>% unlist()
+bfactor <- turk16.picks[i, "bfactor"]$bfactor[[1]] %>% unlist()
 dframe <- data.frame(variable = 1:20, Bfactor= round(bfactor,2))
 
 ymax <- 1:20 %>% lapply(function(i) max(density(subset(lpsXXXm, variable == i)$value)$y)) %>% unlist %>% max
