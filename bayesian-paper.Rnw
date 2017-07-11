@@ -127,9 +127,17 @@ Null generating methods are typically based on (a) simulation, if the null hypot
 The lineup protocol was formally tested in a head-to-head comparison with the equivalent conventional test in \citet{majumder:2011}. The experiment utilized human subjects from Amazon's Mechanical Turk \citep{turk} and used simulation to control conditions. The results suggest that  visual inference is comparable to conventional tests in a controlled conventional setting. This provides support for its appropriateness for testing in real exploratory situations where no conventional test exists. Interestingly, the power of a visual test increases with the number of observers engaged to evaluate lineups, and the pattern in results suggests that the power will provide results consistent with practical significance \citep{kirk:1996}.
 
 \comment{Should cite Adam's papers that examined some null plots as well. Could even possibly analyze some of that data later on as a proof of concept.}
+\svp{Which paper...? I've skimmed several of them and can't seem to find one that talks about the 100\% null plot lineups.}
 
 \subsection{Analysis of Statistical Lineups}
-\comment{Brief overview of standard analysis and analysis of two-target lineups. Cite jcgs paper for two target lineups, methods paper(s) for analysis of lineup data.}
+Statistical lineups typically consist of 20 plots which are then evaluated by $K$ individuals. Conceptually, if most individuals are able to identify a single target plot surrounded by 19 null plots, this would correspond to a statistical test which is significant at the $p < 0.05$ level. Calculation of the visual p-value is a bit more complicated in reality, as discussed in \citet{majumder2013validation}. For a lineup of size $m$ (usually 20), the probability that at least $x$ observers select the target plot is
+\begin{eqnarray}
+P(X \geq x) &= 1 - \text{Binom}_{K, 1/m}(x-1)\\
+& = \sum_{i=1}^K\binom{K}{i} \left(\frac{1}{m}\right)^i\left(\frac{m-1}{m})^{K-i}
+\end{eqnarray}
+
+When lineups contain two targets, slight tweaks are made to the underlying probability distribution\citep[Appendix B]{vanderplas:2017}, and the resulting p-value must be obtained by simulation. There is a less natural interpretation of the p-values resulting from a two-target lineup, as there are two competing alternative hypotheses in this scenario. A much more natural approach to the two-target lineup is to consider the evidence for each of two hypotheses relative to the null hypothesis using a Bayesian approach.
+
 
 \section{A Bayesian's Statistical Lineup}
 Let $p_i$, $i = 1, ..., m$ be the probability that plot $i$ is picked out of a lineup of $m$ panels. We know that $0 \le p_i \le 1$ with $\sum_{i=1}^m p_i = 1$.
