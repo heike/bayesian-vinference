@@ -111,6 +111,8 @@ require(knitr)
 opts_chunk$set(fig.path='figure/', cache.path='cache/', fig.align='center', fig.width=5, fig.height=5, par=TRUE, cache=TRUE, concordance=TRUE, autodep=TRUE, message=F, warning=F)
 
 library(dplyr)
+library(tidyr)
+library(purrr)
 @
 
 \section{Introduction}
@@ -141,36 +143,47 @@ When lineups contain two targets, slight tweaks are made to the underlying proba
 
 \section{A Bayesian's Statistical Lineup}
 Let $p_i$, $i = 1, ..., m$ be the probability that plot $i$ is picked out of a lineup of $m$ panels. We know that $0 \le p_i \le 1$ with $\sum_{i=1}^m p_i = 1$.
-We can assign an uninformative prior probability to $p$ by using a flat Dirichlet distribution (a uniform distribution over the $(m-1)$ simplex). An uninformative proior is desireable because a priori we assume that the plots are all equally likely to be selected by a participant.
+
+\svp{A flat Dirichlet distribution isn't the same as a Jeffrey's prior. Flat priors are improper, which is probably a good idea to avoid as it makes calculation of Bayes factors that much more of a PITA.}
+We can assign an uninformative prior probability to $p$ by using a
+%flat
+Dirichlet distribution (a
+%uniform
+single-parameter
+distribution over the $(m-1)$ simplex,
+with identical marginals for each plot $i$). An uninformative prior is desireable because a priori we assume that the plots are all equally likely to be selected by a participant.
 
 We will use the following model:
 \begin{eqnarray*}
 \alpha &=& (\alpha_1, \alpha_2, ..., \alpha_m) = \text{concentration hyperparameter}\\
 p \mid \alpha &=& (p_1, p_2, ..., p_m) \sim Dir (m, \alpha) \\
-x \mid p &=& (x_1, x_2, ..., x_m) \sim Mult (m, p)
+c \mid p &=& (c_1, c_2, ..., c_m) \sim Mult (m, p)
 \end{eqnarray*}
+
+Figure \ref{fig:prior} shows the prior distribution for each lineup panel.
+
 The posterior distribution is then as follows:
 \begin{eqnarray*}
 c &=& (c_1, ..., c_m) = \text{ number of picks of each plot} \\
-p \mid x, \alpha &\sim& Dir (K, \alpha_1+c_1, \alpha_2+c_2, ..., \alpha_m + c_m)
+K &=& \text{ Total number of evaluations}\\
+p \mid c, \alpha &\sim& Dir (K, \alpha_1+c_1, \alpha_2+c_2, ..., \alpha_m + c_m)
 \end{eqnarray*}
-\svp{Should this be $p\mid c, \alpha$?}
-\svp{What is $K$? Number of evaluations total? also, since $c$ was used for \# picks, I've changed the threshold $c$ to $t$ below.}
+
 \svp{Need to adjust notation to account for multiple plot selections somehow. Maybe add that extension below? e.g. let $z_{ij}$ represent the selection of plot $i$ as the $j$th plot selected. Then $p_i$ = $\sum_{j = 1}^{20} z_{ij}/\sum_{j = 1}^{20} (z_{ij} \text{ is not null})$ or something?}
 
-For visual inference, we are usually dealing with a null hypothesis of the form `the plot of the data is not in any way different from the null plots'.  Under this null hypothesis the vector of concentration parameters $\alpha$ has to consist of the same values, i.e.\ $\alpha_i = $const. The sum of the concentration parameters $\sum{\alpha}$ can be interpreted as the number of (pseudo)evaluations  under the null hypothesis. Jeffreys' uninformative prior \citep{jeffreys:1946} for this situation is $\alpha = \frac{1}{2}$, corresponding to 10 pseudo-evaluations.
+Visual inference usually utilizes a null hypothesis of the form `the plot of the data is not in any way different from the null plots'.  Under this null hypothesis the vector of concentration parameters $\alpha$ has to consist of the same values, i.e.\ $\alpha_i = $const. The sum of the concentration parameters $\sum{\alpha}$ can be interpreted as the number of (pseudo)evaluations  under the null hypothesis. Jeffreys' uninformative prior \citep{jeffreys:1946} for this situation is $\alpha = \frac{1}{2}$, corresponding to 10 pseudo-evaluations.
+
 \hh{this is likely a parameter we have to fine-tune, right now it is set to be $\alpha = 1/2$.
 For $\alpha = 1$ we need a lot of data (in form of evaluations by observers) in order to get the posterior distribution away from the prior, even if we have a strong signal.}
 
-
 One of the advantages of this model is that it allows a seamless incorporation of results from multiple picks by using reciprocal weights: if an evaluator identified three panels as the `most different', each of these three panels gets an additional $1/3$ to its overall number of picks $c$.
-\svp{This is an advantage over the frequentist model for this situation because it could not easily accommodate multiple solutions? Need to explicitly compare/explain.}
 
 \begin{figure}
 \centering
 <<prior, echo=FALSE, fig.width = 8, fig.height = 8, out.width='0.7\\textwidth'>>=
 library(gtools)
-library(reshape2)
+# library(reshape2)
+library(tidyr)
 library(ggplot2)
 
 m <- 20
@@ -225,8 +238,7 @@ bfactors <- function(alpha, counts) {
 bfactors.fix <- function(alpha, counts) {
   x <- seq(0,1, by=0.001)
   bf <- lapply(1:20, function(i) {
-    pre <- pbeta(x, shape1=alpha[i], shape2=sum(alpha)-alpha[i],
-                           lower.tail=FALSE)
+    pre <- pbeta(x, shape1=alpha[i], shape2=sum(alpha)-alpha[i], lower.tail=FALSE)
     post <- pbeta(x, shape1=alpha[i]+counts[i],
                 shape2=sum(alpha)-alpha[i] + sum(counts) - counts[i],
                 lower.tail=FALSE)
@@ -312,7 +324,7 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
 \end{subfigure}
 \caption{\label{fig:xpl-turk1013} Lineup (left) and posterior densities (right) corresponding to evaluations by independent observers.}
 \end{figure}
-
+Figure \ref{fig:xpl-turk1013} shows a lineup and the corresponding posterior densities of the lineup after evaluation by \Sexpr{sum(turk1013.picks[i, "counts"][[1]][[1]])} independent observers. Plots 4 and 14 appear to have attracted the attention of most of the observers; one individual identified plot 10 instead.
 
 \begin{figure}
 \begin{subfigure}[b]{.49\textwidth}
@@ -359,13 +371,28 @@ For each individual panel of the lineup, the marginal distributions are Beta dis
 
 
 \paragraph{Calculation of the Bayes factor for plot \#$i$}\hfill\newline
-In order to assess the strength of the signal of plot \#$i$, we calculate the Bayes Factor, which assesses the posterior odds of the full model described above relative to a model which has uniform probability of selecting each plot. More formally,
-\begin{eqnarray}
-M_1 & := & \text{Multinomial Dirichlet model with Jeffrey's prior}\\
-M_2 & := & \text{Uniform Dirichlet model (equivalent to Jeffrey's prior)}\\
-BF & = & P(M_1|c)/P(M_2|c)\\
-& = & \frac{\int_{p} P(M_1) f_1(c|p) \pi(p) dp}{}
-\end{eqnarray}
+In order to assess the strength of the signal of plot \#$i$, we calculate the Bayes Factor, which assesses the posterior odds of the full model described above relative to a model which has uniform probability of selecting each plot. These Bayes factors are calculated using the marginal distribution which compares each single plot to the collective "other"; the marginal distributions reduce to a Beta-Binomial model. More formally,
+\begin{align}
+M_1 & :=  \text{Beta-Binomial model with Jeffrey's prior}\nonumber\\
+M_2 & :=  \text{Beta model (equivalent to Jeffrey's prior)}\nonumber\\
+BF & =  P(M_1|c)/P(M_2|c)\\
+& =  \frac{\int_{p} P(M_1) f_1(c|p) \pi(p) dp}{\int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber
+\end{align}
+
+This calculation allows us to not only assess the strength of the observers' preference for each panel relative to the uniform probability model; in a two-target lineup, the bayes factors for each target plot can be used to calculate a bayes factor which assesses the strength of the two competing alternative hypotheses. If we consider the marginal distribution for each target plot individually, we calculate separate bayes factors for each target plot.
+
+\begin{align}
+M_{11} & :=  \text{Beta-Binomial model with Jeffrey's prior, for target plot 1}\nonumber\\
+M_{12} & :=  \text{Beta-Binomial model with Jeffrey's prior, for target plot 2}\nonumber\\
+M_2 & :=  \text{Beta model (equivalent to Jeffrey's prior)}\nonumber\\
+BF_1 & =  P(M_{11}|c)/P(M_2|c)\nonumber\\
+& =  \frac{\int_{p} P(M_{11}) f_1(c|p) \pi(p) dp}{\int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber\\
+BF_2 & =  P(M_{12}|c)/P(M_2|c)\nonumber\\
+& =  \frac{\int_{p} P(M_{12}) f_1(c|p) \pi(p) dp}{\int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber\\
+BF_{1,2} & =  BF_1/BF_2\\
+& =  \frac{\int_{p} P(M_{11}) f_1(c|p) \pi(p) dp/ \int_p P(M_2) f_2(c|p)\pi(p) dp}{\int_{p} P(M_{12}) f_1(c|p) \pi(p) dp / \int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber
+& =  \frac{\int_{p} P(M_{11}) f_1(c|p) \pi(p) dp}{\int_{p} P(M_{12}) f_1(c|p) \pi(p) dp}\nonumber
+\end{align}
 
 %
 % \svp{We need to explain the cutoff threshold a bit more - develop the ``why".}
