@@ -460,7 +460,11 @@ BF(M_1, M_2) & = \frac{\int_p P(M_1) f(c_i, K|p) \pi_1(p) dp}{\int_p P(M_2) f(c_
 There are different schemes interpreting the Bayes factor. \citet{jeffreys:1961} consider a factor of 5 to 10 as `substantial', and values above 20 as `decisive'.
 Alternatively, \citet{kass:1995} consider a factor of 6 to 10 as `strong', and values above 10 as `very strong'.
 \FloatBarrier
-\hh{XXX investigate Bayes factor of different scenarios, ie ten evaluations, different number of data picks and null picks. How does that compare to the visual distribution $V_3$? (the Binomial like distribution that is adjusted for dependencies between the data and the nulls). }
+
+\paragraph{Simulation Study}
+% \hh{XXX investigate Bayes factor of different scenarios, ie ten evaluations, different number of data picks and null picks. How does that compare to the visual distribution $V_3$? (the Binomial like distribution that is adjusted for dependencies between the data and the nulls). }
+\svp{Still need to compare to $V_3$, but I'm not sure how to do that. Package recommendations?}
+
 <<bayes-factor-investigation-params, echo = F>>=
 Nruns <- 100
 Npicks <- 20
@@ -516,19 +520,11 @@ ggplot(data = filter(bf, type == "target") %>% select(-pic_id) %>% unique()) +
   ggtitle("Change in Bayes Factor of Target Plots with Increasing Signal")
 @
 
-<<bayes-factor-investigation-Null, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factors for the null plots in a 20 plot lineup, where the lineup is evaluated by  %d individuals. The Bayes Factors of the null plots are more variable when target selections are low, but converge to about 1.5 as the number of target picks increase.", Npicks)>>=
-#
-# ggplot(data = filter(bf, type == "null")) +
-#   geom_jitter(aes(x = target_picks, y = bf), alpha = 0.1) +
-#   geom_smooth(aes(x = target_picks, y = bf), method = "loess") +
-#   xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
-#   # scale_y_log10("Bayes Factor of Null Plots") +
-#   ggtitle("Change in Bayes Factor of Null Plots with Increasing Signal")
-
+<<bayes-factor-investigation-Null, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factors for the null plots in a 20 plot lineup, where the lineup is evaluated by  %d individuals. The Bayes Factors of the null plots are more variable when target selections are low, but converge to about 1.5 as the number of target picks increase. Bayes factors are truncated at 10 to show the behavior of the majority of the null plot bayes factors.", Npicks)>>=
 ggplot() +
   geom_hline(aes(yintercept = 1), color = "red") +
   geom_text(aes(x = 21, y = 1, label = "BF = 1"), vjust = 1, color = "red") +
-  geom_boxplot(aes(x = target_picks, y = bf, group = cut_width(target_picks, 1)),
+  geom_boxplot(aes(x = target_picks, y = pmin(10, bf), group = cut_width(target_picks, 1)),
                data = filter(bf, type == "null"),
                outlier.shape = 1) +
   xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
