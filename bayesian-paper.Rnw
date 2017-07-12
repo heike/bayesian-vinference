@@ -144,14 +144,7 @@ When lineups contain two targets, slight tweaks are made to the underlying proba
 \section{A Bayesian's Statistical Lineup}
 Let $p_i$, $i = 1, ..., m$ be the probability that plot $i$ is picked out of a lineup of $m$ panels. We know that $0 \le p_i \le 1$ with $\sum_{i=1}^m p_i = 1$.
 
-\svp{A flat Dirichlet distribution isn't the same as a Jeffrey's prior. Flat priors are improper, which is probably a good idea to avoid as it makes calculation of Bayes factors that much more of a PITA.}
-We can assign an uninformative prior probability to $p$ by using a
-%flat
-Dirichlet distribution (a
-%uniform
-single-parameter
-distribution over the $(m-1)$ simplex,
-with identical marginals for each plot $i$). An uninformative prior is desireable because a priori we assume that the plots are all equally likely to be selected by a participant.
+We can assign an uninformative prior probability to $p$ by using a Dirichlet distribution (a single-parameter distribution over the $(m-1)$ simplex, with identical marginals for each plot $i$). An uninformative prior is desireable because a priori we assume that the plots are all equally likely to be selected by a participant.
 
 We will use the following model:
 \begin{eqnarray*}
@@ -165,16 +158,16 @@ Figure \ref{fig:prior} shows the prior distribution for each lineup panel.
 The posterior distribution is then as follows:
 \begin{eqnarray*}
 c &=& (c_1, ..., c_m) = \text{ number of picks of each plot} \\
-K &=& \text{ Total number of evaluations}\\
+K &=& \text{ Total number of evaluations} = \sum_{i=1}^m c_i\\
 p \mid c, \alpha &\sim& Dir (K, \alpha_1+c_1, \alpha_2+c_2, ..., \alpha_m + c_m)
 \end{eqnarray*}
 
-\svp{Need to adjust notation to account for multiple plot selections somehow. Maybe add that extension below? e.g. let $z_{ij}$ represent the selection of plot $i$ as the $j$th plot selected. Then $p_i$ = $\sum_{j = 1}^{20} z_{ij}/\sum_{j = 1}^{20} (z_{ij} \text{ is not null})$ or something?}
+% \svp{Need to adjust notation to account for multiple plot selections somehow. Maybe add that extension below? e.g. let $z_{ij}$ represent the selection of plot $i$ as the $j$th plot selected. Then $p_i$ = $\sum_{j = 1}^{20} z_{ij}/\sum_{j = 1}^{20} (z_{ij} \text{ is not null})$ or something?}
 
 Visual inference usually utilizes a null hypothesis of the form `the plot of the data is not in any way different from the null plots'.  Under this null hypothesis the vector of concentration parameters $\alpha$ has to consist of the same values, i.e.\ $\alpha_i = $const. The sum of the concentration parameters $\sum{\alpha}$ can be interpreted as the number of (pseudo)evaluations  under the null hypothesis. Jeffreys' uninformative prior \citep{jeffreys:1946} for this situation is $\alpha = \frac{1}{2}$, corresponding to 10 pseudo-evaluations.
 
-\hh{this is likely a parameter we have to fine-tune, right now it is set to be $\alpha = 1/2$.
-For $\alpha = 1$ we need a lot of data (in form of evaluations by observers) in order to get the posterior distribution away from the prior, even if we have a strong signal.}
+% \hh{this is likely a parameter we have to fine-tune, right now it is set to be $\alpha = 1/2$.
+% For $\alpha = 1$ we need a lot of data (in form of evaluations by observers) in order to get the posterior distribution away from the prior, even if we have a strong signal.}
 
 One of the advantages of this model is that it allows a seamless incorporation of results from multiple picks by using reciprocal weights: if an evaluator identified three panels as the `most different', each of these three panels gets an additional $1/3$ to its overall number of picks $c$.
 
@@ -217,13 +210,17 @@ getCounts <- function(response) {
 bfactors <- function(a1, a2, counts) {
   x <- seq(0,1, by=0.001)
   bf <- lapply(1:20, function(i) {
-    m2 <- pbeta(x, shape1 = a2[i] + counts,
-                shape2 = sum(a2) - a2[i] + sum(counts) - counts[i],
-                lower.tail=FALSE)
-    m1 <- pbeta(x, shape1=a1[i] + counts[i],
-                shape2 = sum(a1) - a1[i] + sum(counts) - counts[i],
-                lower.tail=FALSE)
-    sum(m1)/sum(m2)
+    # m2 <- pbeta(x, shape1 = a2[i] + counts,
+    #             shape2 = sum(a2) - a2[i] + sum(counts) - counts[i],
+    #             lower.tail=FALSE)
+    # m1 <- pbeta(x, shape1=a1[i] + counts[i],
+    #             shape2 = sum(a1) - a1[i] + sum(counts) - counts[i],
+    #             lower.tail=FALSE)
+    # sum(m1)/sum(m2)
+
+    beta(a2[i], sum(a2) - a2[i])/beta(a1[i], sum(a1) - a1[i]) *
+      beta(counts[i] + a1[i], sum(counts) - counts[i] + sum(a1) - a1[i])/
+      beta(counts[i] + a2[i], sum(counts) - counts[i] + sum(a2) - a2[i])
   })
   # This version sums first and then divides.
 
@@ -357,6 +354,7 @@ M_2 & :=  \text{Beta-Binomial model with strong prior, mass around }\alpha = 0.0
 BF & =  P(M_1|c)/P(M_2|c)\\
 & =  \frac{\int_{p} P(M_1) f_1(c|p) \pi(p) dp}{\int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber
 \end{align}
+We will set the prior odds of $M_1$ to be equal to the prior odds of $M_2$, that is, $P(M_1) = P(M_2)$.
 
 What remains is to set the parameters for model 2 so that the strong prior belief that all plots are equally likely to be selected is reflected in the model. We decided to use a Dirichlet distribution with extremely large $\alpha$ = 20, which would be the equivalent of pre-specifying 20 selections of each sub-plot. This distribution has marginal distributions equivalent to the Beta(20, 380) distribution, which has a mean of 0.05 and standard deviation of \Sexpr{round(sqrt((20*380)/(400^2*401)), 3)}.
 
@@ -378,6 +376,27 @@ qplot(value, geom="density", data=lpsm, fill=I("grey50"),
 \caption{\label{fig:prior-model2}A strongly informative prior for any lineup of size 20 which reflects the belief that all sub-plots are equally likely to be selected. }
 \end{figure}
 
+With both M1 and M2 specified, we can calculate an explicit formula for the bayes factor for a specific panel $i$, where $c_i$ is the number of picks of the panel, $K$ is the total number of evaluations of the lineup overall, $\pi_1(p) \sim \text{Beta}(1/2, 1/2)$, $\pi_2(p) \sim \text{Beta}(20, 380)$, and $f(c_i, K | p) \sim \text{Binomial}(K, p)$.
+\begin{align}
+BF(M_1, M_2) & = \frac{\int_p P(M_1) f(c_i, K|p) \pi_1(p) dp}{\int_p P(M_2) f(c_i, K|p) \pi_2(p)}\nonumber\\
+& = \frac{P(M_1)}{P(M_2)}
+    \frac{\int_p \binom{K}{c_i} p^{c_i}(1-p)^{K - c_i} \cdot \frac{1}{B(\frac{1}{2}, \frac{19}{2})} p^{-\frac{1}{2}}(1-p)^{-\frac{17}{2}}}
+         {\int_p \binom{K}{c_i} p^{c_i}(1-p)^{K - c_i} \cdot \frac{1}{B(20, 380)} p^{19}(1-p)^{379}}\nonumber\\
+& = \frac{\binom{K}{c_i}}{\binom{K}{c_i}}
+    \frac{B(20, 380)}{B(\frac{1}{2}, \frac{19}{2})}
+    \frac{\int_p p^{c_i - \frac{1}{2}}(1-p)^{K - c_i + \frac{17}{2}}}
+         {\int_p p^{c_i + 19}(1-p)^{K - c_i + 379}} \nonumber\\
+& = \frac{B(20, 380)}{B(\frac{1}{2}, \frac{19}{2})}
+    \frac{B(c_i + \frac{1}{2}, K - c_i + \frac{19}{2}) \int_p \frac{1}{B(c_i + \frac{1}{2}, K - c_i + \frac{19}{2})} p^{c_i - \frac{1}{2}}(1-p)^{K - c_i + \frac{17}{2}}}
+         {B(c_i + 20, K - c_i + 380) \int_p \frac{1}{B(c_i + 20, K - c_i + 380)} p^{c_i + 19}(1-p)^{K - c_i + 379}} \nonumber\\
+& = \frac{B(20, 380)}{B(\frac{1}{2}, \frac{19}{2})}
+    \frac{B(c_i + \frac{1}{2}, K - c_i + \frac{19}{2})}{B(c_i + 20, K - c_i + 380)}
+    \frac{\int_p \frac{1}{B(\alpha_1, B_1)} p^{\alpha_1 - 1}(1-p)^{B_1 - 1}}
+         {\int_p \frac{1}{B(\alpha_2, B_2)} p^{\alpha_2 - 1}(1-p)^{B_2 - 1}} \nonumber\\
+&\phantom{ = } \text{ where }\alpha_1 = c_i + \frac{1}{2}, B_1 = K - c_i + \frac{19}{2}, \alpha_2 = c_i + 20, B_2 = K - c_i + 380 \nonumber\\
+& = \frac{B(20, 380)}{B(\frac{1}{2}, \frac{19}{2})}
+    \frac{B(c_i + \frac{1}{2}, K - c_i + \frac{19}{2})}{B(c_i + 20, K - c_i + 380)}
+\end{align}
 
 % This calculation allows us to not only assess the strength of the observers' preference for each panel relative to the uniform probability model; in a two-target lineup, the bayes factors for each target plot can be used to calculate a bayes factor which assesses the strength of the two competing alternative hypotheses. If we consider the marginal distribution for each target plot individually, we calculate separate bayes factors for each target plot.
 %
@@ -443,10 +462,10 @@ Alternatively, \citet{kass:1995} consider a factor of 6 to 10 as `strong', and v
 \FloatBarrier
 \hh{XXX investigate Bayes factor of different scenarios, ie ten evaluations, different number of data picks and null picks. How does that compare to the visual distribution $V_3$? (the Binomial like distribution that is adjusted for dependencies between the data and the nulls). }
 <<bayes-factor-investigation-params, echo = F>>=
-Nruns <- 200
-Npicks <- 40
+Nruns <- 100
+Npicks <- 20
 @
-We simulated bayes factors arising from the following scenario: Out of \Sexpr{Npicks} evaluations, the target plot was selected $x$ times (null plot selections were randomly generated with $\Sexpr{Npicks}-x$ total selections of null plots). For each value of $x$, this simulation was run \Sexpr{Nruns} times, and the results are shown in Figure \ref{fig:bayes-factor-investigation-Target} (target plot bayes factors) and Figure \ref{fig:bayes-factor-investigation-Null} (null plot bayes factors). The target plot bayes factors were identical across all \Sexpr{Nruns} simulation runs, but the null plot bayes factors were not, as a result, the target bayes factor plot shows a clear linear relationship, while the null bayes factor plot shows a series of boxplots representing the distribution of bayes factors for each of 19 null plots in each of \Sexpr{Nruns} simulation runs with $x$ between 0 and \Sexpr{Npicks}.
+We simulated bayes factors arising from the following scenario: Out of \Sexpr{Npicks} evaluations, the target plot was selected $x$ times (null plot selections were randomly generated with $\Sexpr{Npicks}-x$ total selections of null plots). For each value of $x$, this simulation was run \Sexpr{Nruns} times, and the results are shown in Figure \ref{fig:bayes-factor-investigation-Target} (target plot bayes factors) and Figure \ref{fig:bayes-factor-investigation-Null} (null plot bayes factors). The target plot bayes factors were identical across all \Sexpr{Nruns} simulation runs, but the null plot bayes factors were not, as a result, the target bayes factor plot consists of a single line while the null bayes factor plot shows a series of boxplots representing the distribution of bayes factors for each of 19 null plots in each of \Sexpr{Nruns} simulation runs with $x$ between 0 and \Sexpr{Npicks}. The bayes factor for the target plot initially decreases with increasing selections (corresponding to approximately ``uniform" distribution of plot picks) and then increases dramatically with each increasing selection of the target plot.
 
 <<bayes-factor-investigation, echo = F>>=
 # Investigate Bayes factor of different scenarios, i.e. 10 evaluations with different number of data picks and null picks.
@@ -480,18 +499,38 @@ bf <- 1:nrow(tmp) %>%
     target_picks = stringr::str_extract(pic_id, "^\\d{2}") %>% as.numeric()
   )
 @
-<<bayes-factor-investigation-Target, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factor for the target plot in a 20 plot lineup, where the lineup is evaluated by  %d individuals.", Npicks)>>=
+
+<<bayes-factor-investigation-Target-trunc, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factor for the target plot in a 20 plot lineup, where the lineup is evaluated by  %d individuals, but is truncated at BF = 20, which corresponds to overwhelming evidence.", Npicks)>>=
 ggplot(data = filter(bf, type == "target") %>% select(-pic_id) %>% unique()) +
-  geom_line(aes(x = target_picks, y = bf)) +
+  geom_line(aes(x = target_picks, y = pmin(20, bf))) +
   xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
   ylab("Bayes Factor of Target Plot") +
   ggtitle("Change in Bayes Factor of Target Plots with Increasing Signal")
 @
 
-<<bayes-factor-investigation-Null, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factors for the null plots in a 20 plot lineup, where the lineup is evaluated by  %d individuals. The Bayes Factors of the null plots decrease with increasing number of target selections.", Npicks)>>=
+<<bayes-factor-investigation-Target, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factor for the target plot in a 20 plot lineup, where the lineup is evaluated by  %d individuals.", Npicks)>>=
+ggplot(data = filter(bf, type == "target") %>% select(-pic_id) %>% unique()) +
+  geom_line(aes(x = target_picks, y = bf)) +
+  xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
+  scale_y_log10("Bayes Factor of Target Plot") +
+  ggtitle("Change in Bayes Factor of Target Plots with Increasing Signal")
+@
 
-ggplot(data = filter(bf, type == "null") %>% select(-pic_id) %>% unique()) +
-  geom_boxplot(aes(x = target_picks, y = bf, group = cut_width(target_picks, 1))) +
+<<bayes-factor-investigation-Null, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factors for the null plots in a 20 plot lineup, where the lineup is evaluated by  %d individuals. The Bayes Factors of the null plots are more variable when target selections are low, but converge to about 1.5 as the number of target picks increase.", Npicks)>>=
+#
+# ggplot(data = filter(bf, type == "null")) +
+#   geom_jitter(aes(x = target_picks, y = bf), alpha = 0.1) +
+#   geom_smooth(aes(x = target_picks, y = bf), method = "loess") +
+#   xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
+#   # scale_y_log10("Bayes Factor of Null Plots") +
+#   ggtitle("Change in Bayes Factor of Null Plots with Increasing Signal")
+
+ggplot() +
+  geom_hline(aes(yintercept = 1), color = "red") +
+  geom_text(aes(x = 21, y = 1, label = "BF = 1"), vjust = 1, color = "red") +
+  geom_boxplot(aes(x = target_picks, y = bf, group = cut_width(target_picks, 1)),
+               data = filter(bf, type == "null"),
+               outlier.shape = 1) +
   xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
   ylab("Bayes Factor of Null Plots") +
   ggtitle("Change in Bayes Factor of Null Plots with Increasing Signal")
