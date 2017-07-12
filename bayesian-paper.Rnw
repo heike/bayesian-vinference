@@ -92,7 +92,7 @@
 
 \bigskip
 \begin{abstract}
-Graphics play a crucial role in statistical analysis and data mining. The lineup protocol for experimentally testing graphics has traditionally used p-values to identify plots which are significantly visually distinct from distractor plots, but this approach does not easily translate to examining randomly generated plots to determine the strength of the distractor effect. This study presents a bayesian approach to visual inference, using bayes factors to examine the difference in signal strength in two-target statistical lineups.
+Graphics play a crucial role in statistical analysis and data mining. The lineup protocol for experimentally testing graphics has traditionally used p-values to identify plots which are significantly visually distinct from distractor plots, but this approach does not easily translate to examining randomly generated plots to determine the strength of the distractor effect. This study presents a Bayesian approach to visual inference, using Bayes factors to examine the difference in signal strength in two-target statistical lineups.
 \end{abstract}
 
 \noindent%
@@ -376,7 +376,7 @@ qplot(value, geom="density", data=lpsm, fill=I("grey50"),
 \caption{\label{fig:prior-model2}A strongly informative prior for any lineup of size 20 which reflects the belief that all sub-plots are equally likely to be selected. }
 \end{figure}
 
-With both M1 and M2 specified, we can calculate an explicit formula for the bayes factor for a specific panel $i$, where $c_i$ is the number of picks of the panel, $K$ is the total number of evaluations of the lineup overall, $\pi_1(p) \sim \text{Beta}(1/2, 1/2)$, $\pi_2(p) \sim \text{Beta}(20, 380)$, and $f(c_i, K | p) \sim \text{Binomial}(K, p)$.
+With both M1 and M2 specified, we can calculate an explicit formula for the Bayes factor for a specific panel $i$, where $c_i$ is the number of picks of the panel, $K$ is the total number of evaluations of the lineup overall, $\pi_1(p) \sim \text{Beta}(1/2, 1/2)$, $\pi_2(p) \sim \text{Beta}(20, 380)$, and $f(c_i, K | p) \sim \text{Binomial}(K, p)$.
 \begin{align}
 BF(M_1, M_2) & = \frac{\int_p P(M_1) f(c_i, K|p) \pi_1(p) dp}{\int_p P(M_2) f(c_i, K|p) \pi_2(p)}\nonumber\\
 & = \frac{P(M_1)}{P(M_2)}
@@ -398,7 +398,7 @@ BF(M_1, M_2) & = \frac{\int_p P(M_1) f(c_i, K|p) \pi_1(p) dp}{\int_p P(M_2) f(c_
     \frac{B(c_i + \frac{1}{2}, K - c_i + \frac{19}{2})}{B(c_i + 20, K - c_i + 380)}
 \end{align}
 
-% This calculation allows us to not only assess the strength of the observers' preference for each panel relative to the uniform probability model; in a two-target lineup, the bayes factors for each target plot can be used to calculate a bayes factor which assesses the strength of the two competing alternative hypotheses. If we consider the marginal distribution for each target plot individually, we calculate separate bayes factors for each target plot.
+% This calculation allows us to not only assess the strength of the observers' preference for each panel relative to the uniform probability model; in a two-target lineup, the Bayes factors for each target plot can be used to calculate a Bayes factor which assesses the strength of the two competing alternative hypotheses. If we consider the marginal distribution for each target plot individually, we calculate separate Bayes factors for each target plot.
 %
 % \begin{align}
 % M_{11} & :=  \text{Beta-Binomial model with Jeffrey's prior, for target plot 1}\nonumber\\
@@ -426,7 +426,7 @@ BF(M_1, M_2) & = \frac{\int_p P(M_1) f(c_i, K|p) \pi_1(p) dp}{\int_p P(M_2) f(c_
 % where $t$ is a pre-specified threshold with $t \in (0,1)$ and $p_i$ is the probability that an observer chooses plot \#$i$, $1 \le i \le m$, as the most different.
 % \svp{``most different" is a bit of a weird phrase given that we're allowing participants to select multiple panels. Perhaps ``observer selects plot ... as visually distinct"?}
 %
-% \svp{Is this thing $B_t$ technically a bayes factor any more? I would think so, but I'm not sure...?\\Upon further reflection, for a single value of $t$ it's a Bayes factor over a reduced sample space, I believe. However, it doesn't make that much sense to integrate $t$ out if that's the interpretation; rather, just integrate over the entire parameter space $[0,1]$ instead.}
+% \svp{Is this thing $B_t$ technically a Bayes factor any more? I would think so, but I'm not sure...?\\Upon further reflection, for a single value of $t$ it's a Bayes factor over a reduced sample space, I believe. However, it doesn't make that much sense to integrate $t$ out if that's the interpretation; rather, just integrate over the entire parameter space $[0,1]$ instead.}
 %
 % The choice of $t$ is critical: a natural choice would be $t = 1/m$, where $m$ is the size of the lineup. However, the prior probability in a lineup of size 20 is $\Sexpr{round(pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 3)}$ when using the uninformative prior described above. This puts an upper limit on the Bayes factor of $\Sexpr{round(1/pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 2)}$ (the reciprocal value of the prior). A higher threshold allows for a higher upper limit on the Bayes factor, e.g.\ a threshold of $t = \frac{2}{m}$ already allows for a Bayes factor of up to \Sexpr{round(1/pbeta(1/20*2, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE),2)}. For the example shown in Figure~\ref{fig:xpl-104}, the posterior probabilities of picking panels \#11 and \#20 with a probability of at least $t = \frac{2}{m}$ are \Sexpr{round(probs[11],4)} and \Sexpr{round(probs[20],4)}, respectively. This corresponds to Bayes factors of  \Sexpr{round(probs[11]/preprobs[11],2)} and \Sexpr{round(probs[20]/preprobs[20],2)}.
 % An overview of the Bayes factors $B_t$ for a specific lineup is shown in Figure~\ref{fig:bt-104}.
@@ -469,7 +469,6 @@ Alternatively, \citet{kass:1995} consider a factor of 6 to 10 as `strong', and v
 Nruns <- 100
 Npicks <- 20
 @
-We simulated bayes factors arising from the following scenario: Out of \Sexpr{Npicks} evaluations, the target plot was selected $x$ times (null plot selections were randomly generated with $\Sexpr{Npicks}-x$ total selections of null plots). For each value of $x$, this simulation was run \Sexpr{Nruns} times, and the results are shown in Figure \ref{fig:bayes-factor-investigation-Target} (target plot bayes factors) and Figure \ref{fig:bayes-factor-investigation-Null} (null plot bayes factors). The target plot bayes factors were identical across all \Sexpr{Nruns} simulation runs, but the null plot bayes factors were not, as a result, the target bayes factor plot consists of a single line while the null bayes factor plot shows a series of boxplots representing the distribution of bayes factors for each of 19 null plots in each of \Sexpr{Nruns} simulation runs with $x$ between 0 and \Sexpr{Npicks}. The bayes factor for the target plot initially decreases with increasing selections (corresponding to approximately ``uniform" distribution of plot picks) and then increases dramatically with each increasing selection of the target plot.
 
 <<bayes-factor-investigation, echo = F>>=
 # Investigate Bayes factor of different scenarios, i.e. 10 evaluations with different number of data picks and null picks.
@@ -490,7 +489,7 @@ tmp %<>%
            as.numeric) %>%
   arrange(data.picks)
 
-# Get bayes factors for signal and null plots out
+# Get Bayes factors for signal and null plots out
 bf <- 1:nrow(tmp) %>%
   map_df(.f = function(i) {
     x <- tmp[i,]
@@ -502,7 +501,23 @@ bf <- 1:nrow(tmp) %>%
   mutate(
     target_picks = stringr::str_extract(pic_id, "^\\d{2}") %>% as.numeric()
   )
+
+# Get p-values:
+library(vinference)
+p.sim <- 0:Npicks %>%
+  map_df(.f = function(i) {
+    pVsim(x = i, K = Npicks, m = 20, scenario = 3) %>% as.data.frame()
+  }) %>%
+  select(target_picks = x, p.simulated = simulated, p.binom = binom)
+
+bf.p.compare <- filter(bf, type == "target") %>%
+  select(-pic_id, -type) %>%
+  unique() %>%
+  left_join(p.sim)
+
 @
+
+We simulated Bayes factors arising from the following scenario: Out of \Sexpr{Npicks} evaluations, the target plot was selected $x$ times (null plot selections were randomly generated with $\Sexpr{Npicks}-x$ total selections of null plots). For each value of $x$, this simulation was run \Sexpr{Nruns} times, and the results are shown in Figure \ref{fig:bayes-factor-investigation-Target} (target plot Bayes factors) and Figure \ref{fig:bayes-factor-investigation-Null} (null plot Bayes factors). The target plot Bayes factors were identical across all \Sexpr{Nruns} simulation runs, but the null plot Bayes factors were not, as a result, the target Bayes factor plot consists of a single line while the null Bayes factor plot shows a series of boxplots representing the distribution of Bayes factors for each of 19 null plots in each of \Sexpr{Nruns} simulation runs with $x$ between 0 and \Sexpr{Npicks}. The Bayes factor for the target plot initially decreases with increasing selections (corresponding to approximately ``uniform" distribution of plot picks) and then increases dramatically with each increasing selection of the target plot.
 
 <<bayes-factor-investigation-Target-trunc, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factor for the target plot in a 20 plot lineup, where the lineup is evaluated by  %d individuals, but is truncated at BF = 20, which corresponds to overwhelming evidence.", Npicks)>>=
 ggplot(data = filter(bf, type == "target") %>% select(-pic_id) %>% unique()) +
@@ -512,7 +527,8 @@ ggplot(data = filter(bf, type == "target") %>% select(-pic_id) %>% unique()) +
   ggtitle("Change in Bayes Factor of Target Plots with Increasing Signal")
 @
 
-<<bayes-factor-investigation-Target, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factor for the target plot in a 20 plot lineup, where the lineup is evaluated by  %d individuals.", Npicks)>>=
+Figure \ref{fig:bayes-factor-investigation-Target-trunc} shows the Bayes factors of the target plots, with the y-axis truncated at 20 to highlight the behavior of the Bayes factor with relatively few target plot selections. Figure \ref{fig:bayes-factor-investigation-Target} shows the full range of Bayes factors with 0-\Sexpr{Npicks} target plot selections.
+<<bayes-factor-investigation-Target, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the Bayes factor for the target plot in a 20 plot lineup, where the lineup is evaluated by  %d individuals.", Npicks)>>=
 ggplot(data = filter(bf, type == "target") %>% select(-pic_id) %>% unique()) +
   geom_line(aes(x = target_picks, y = bf)) +
   xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
@@ -520,18 +536,40 @@ ggplot(data = filter(bf, type == "target") %>% select(-pic_id) %>% unique()) +
   ggtitle("Change in Bayes Factor of Target Plots with Increasing Signal")
 @
 
-<<bayes-factor-investigation-Null, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the bayes factors for the null plots in a 20 plot lineup, where the lineup is evaluated by  %d individuals. The Bayes Factors of the null plots are more variable when target selections are low, but converge to about 1.5 as the number of target picks increase. Bayes factors are truncated at 10 to show the behavior of the majority of the null plot bayes factors.", Npicks)>>=
+Figure \ref{fig:bayes-factor-investigation-Null} shows the distribution of Bayes factors of the 19 null plots in each simulated scenario.
+<<bayes-factor-investigation-Null, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the Bayes factors for the null plots in a 20 plot lineup, where the lineup is evaluated by %d individuals. The Bayes factors of the null plots are more variable when target selections are low, but converge to about 1.5 as the number of target picks increase. The blue line is a nonparametric smooth which shows the average value as the number of target picks change. Bayes factors are truncated at 10 to show the behavior of the majority of the null plot Bayes factors.", Npicks)>>=
 ggplot() +
   geom_hline(aes(yintercept = 1), color = "red") +
   geom_text(aes(x = 21, y = 1, label = "BF = 1"), vjust = 1, color = "red") +
   geom_boxplot(aes(x = target_picks, y = pmin(10, bf), group = cut_width(target_picks, 1)),
                data = filter(bf, type == "null"),
                outlier.shape = 1) +
+  geom_smooth(aes(x = target_picks, y = pmin(10, bf)), fullrange = F,
+               data = filter(bf, type == "null")) +
   xlab(sprintf("# Target Picks out of %d Total Picks", Npicks)) +
-  ylab("Bayes Factor of Null Plots") +
+  scale_y_continuous("Bayes Factor of Null Plots", limits = c(0, 10)) +
   ggtitle("Change in Bayes Factor of Null Plots with Increasing Signal")
 
 rm(tmp, bf, bf.sim)
+@
+
+Figure \ref{fig:bayes-factor-V3-compare} shows the simulated p-value and Bayes factor corresponding to $c$ target picks out of \Sexpr{Npicks} total evaluations, where $c$ is represented in the plot text. In most cases, the two methods produce the same outcome, but when 4 individuals out of \Sexpr{Npicks} select the target plot, the Bayes factor is under 5 while the p-value is less than 0.05; thus, the two methods do not produce identical results in all cases.
+
+<<bayes-factor-V3-compare, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = "Bayes Factors and corresponding simulated p-values from the V3 distribution used to evaluate lineups under frequentist paradigms. As Bayes factors lie in the space $(0, \infty)$, they provide much better discrimination of the strength of the evidence. Points are represented by text indicating the number of target picks.">>=
+ggplot() +
+  geom_rect(aes(xmin = 0.05, xmax = 5, ymin = 0, ymax = Inf, fill = "Insufficient Evidence in favor of Model 1"), alpha = .25) +
+  geom_rect(aes(xmin = 0.05, xmax = Inf, ymin = 0.05, ymax = Inf, fill = "Insufficient Evidence to reject H0"), alpha = .25) +
+  geom_text(aes(x = bf, y = p.simulated, label = target_picks, color = "# Plot Evaluations"), data = bf.p.compare) +
+  geom_hline(aes(yintercept = 0.05, color = "Threshold to reject H0")) +
+  geom_vline(aes(xintercept = 5, color = "Threshold for evidence in favor of Model 1")) +
+  scale_color_manual("", values = c("# Plot Evaluations" = "black", "Threshold to reject H0" = "red", "Threshold for evidence in favor of Model 1" = "blue"), guide = F) +
+  scale_fill_manual("", values = c("# Plot Evaluations" = "transparent", "Insufficient Evidence to reject H0" = "red", "Insufficient Evidence in favor of Model 1" = "blue")) +
+  scale_x_log10() +
+  scale_y_sqrt() +
+  xlab("Bayes Factor") +
+  ylab("Simulated P-value (V3 distribution)") +
+  ggtitle(sprintf("Comparison of Bayesian and Frequentist Lineup Analysis Methods with %d Lineup Evaluations", Npicks)) +
+  theme(legend.position = c(1, 1), legend.justification = c(1, 1), legend.title = element_blank(), legend.background = element_rect(fill = "transparent"))
 @
 
 \begin{figure}
