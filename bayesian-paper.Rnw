@@ -147,22 +147,21 @@ Let $p_i$, $i = 1, ..., m$ be the probability that plot $i$ is picked out of a l
 We can assign a prior probability to $p$ by using a Dirichlet distribution (a single-parameter distribution over the $(m-1)$ simplex, with identical marginals for each plot $i$). A Dirichlet distribution is an ideal prior distribution because a priori we assume that the plots are all equally likely to be selected by a participant, but the concentration parameter allows us to vary the strength of this belief.
 
 We will use the following model:
-\begin{eqnarray*}
-\alpha &=& (\alpha_1, \alpha_2, ..., \alpha_m) = \text{concentration hyperparameter}\\
-p \mid \alpha &=& (p_1, p_2, ..., p_m) \sim Dir (m, \alpha) \\
-c \mid p &=& (c_1, c_2, ..., c_m) \sim Mult (m, p)
-\end{eqnarray*}
+\begin{align*}
+\alpha &= (\alpha_1, \alpha_2, ..., \alpha_m) = \text{concentration hyperparameter}\\
+p \mid \alpha &= (p_1, p_2, ..., p_m) \sim Dir (m, \alpha) \\
+c \mid p &= (c_1, c_2, ..., c_m) \sim Mult (m, p)
+\end{align*}
 
-Figure \ref{fig:prior} shows the prior distribution for each lineup panel.
+Figure \ref{fig:prior}(a) shows the prior distribution of $p$ for each lineup panel under a noninformative prior.
 
 Visual inference usually utilizes a null hypothesis of the form `the plot of the data is not in any way different from the null plots'. As we do not have any evidence a priori to establish that one plot is more likely to be selected, we will utilize prior distributions with a constant concentration parameter $\alpha$ such that all $\alpha_i$ values are equal. The sum of the concentration parameters $\sum{\alpha}$ can be interpreted as the number of (pseudo)evaluations  under the null hypothesis. Jeffreys' uninformative prior \citep{jeffreys:1946} for this situation is $\alpha = \frac{1}{2}$, which corresponds to 10 pseudo-evaluations.
 
 % \hh{this is likely a parameter we have to fine-tune, right now it is set to be $\alpha = 1/2$.
 % For $\alpha = 1$ we need a lot of data (in form of evaluations by observers) in order to get the posterior distribution away from the prior, even if we have a strong signal.}
+
 \begin{figure}
-\begin{subfigure}[b]{.49\textwidth}
-\centering
-<<prior, echo=FALSE, fig.width = 8, fig.height = 8, out.width='\\textwidth'>>=
+<<prior, echo=FALSE, fig.width = 4, fig.height = 4, out.width = '.48\\textwidth', fig.show='hold'>>=
 library(gtools)
 # library(reshape2)
 library(tidyr)
@@ -180,14 +179,9 @@ qplot(value, geom="density", data=lpsm, fill=I("grey50"),
       colour=I("grey45"), alpha=I(0.5)) +
   facet_wrap(~variable) + xlim(c(0,1)) +
   theme_bw() +
-  xlab("Probability to pick plot")
-@
-\caption{\label{fig:prior}Noninformative prior}
-\end{subfigure}
-\begin{subfigure}
-\centering
-<<prior-model2, echo=FALSE, fig.width = 8, fig.height = 8, out.width='\\textwidth'>>=
-m <- 20
+  xlab("Probability to pick plot") +
+  ggtitle("Noninformative (alpha = 1/2)")
+
 lps <- data.frame(rdirichlet(5000, alpha_2))
 
 lpsm <- gather(lps, key = "variable")
@@ -197,20 +191,19 @@ qplot(value, geom="density", data=lpsm, fill=I("grey50"),
       colour=I("grey45"), alpha=I(0.5)) +
   facet_wrap(~variable) + xlim(c(0,1)) +
   theme_bw() +
-  xlab("Probability to pick plot")
+  xlab("Probability to pick plot") +
+  ggtitle("Strongly Informative (alpha = 20)")
 @
-\caption{\label{fig:prior-model2}Strong prior}
-\end{subfigure}
-\caption{Two different Dirichlet($\alpha$) priors for a lineup with 20 panels.}
+\caption{Two different Dirichlet($\alpha$) priors for a lineup with 20 panels. \label{fig:prior}}
 \end{figure}
-
+\FloatBarrier
 
 The posterior distribution is then as follows:
-\begin{eqnarray*}
-c &=& (c_1, ..., c_m) = \text{ number of picks of each plot} \\
-K &=& \text{ Total number of evaluations} = \sum_{i=1}^m c_i\\
-p \mid c, \alpha &\sim& Dir (K, \alpha_1+c_1, \alpha_2+c_2, ..., \alpha_m + c_m)
-\end{eqnarray*}
+\begin{align*}
+c &= (c_1, ..., c_m) = \text{ number of picks of each plot} \\
+K &= \text{ Total number of evaluations} = \sum_{i=1}^m c_i\\
+p \mid c, \alpha &\sim Dir (K, \alpha_1+c_1, \alpha_2+c_2, ..., \alpha_m + c_m)
+\end{align*}
 
 % \svp{Need to adjust notation to account for multiple plot selections somehow. Maybe add that extension below? e.g. let $z_{ij}$ represent the selection of plot $i$ as the $j$th plot selected. Then $p_i$ = $\sum_{j = 1}^{20} z_{ij}/\sum_{j = 1}^{20} (z_{ij} \text{ is not null})$ or something?}
 
@@ -301,7 +294,7 @@ turk1013.picks <- pre_post_picks(turk1013)
 \end{subfigure}
 \begin{subfigure}[b]{.49\textwidth}
 \caption{\label{fig:posterior}Posterior densities for the choosing panel \#$i$}
-<<pics-turk1013, dependson='posterior', echo=FALSE,  fig.width=8, fig.height = 8, out.width='\\textwidth'>>=
+<<pics-turk1013, dependson='posterior', echo=FALSE,  fig.width=6, fig.height =6, out.width='\\textwidth'>>=
 # show one of the results:
 i <- 1
 
@@ -330,8 +323,9 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
 
 @
 \end{subfigure}
-\caption{\label{fig:xpl-turk1013} Lineup (left) and posterior densities (right) corresponding to evaluations by independent observers.}
+\caption{\label{fig:xpl-turk1013} Lineup (left) and posterior densities (right) corresponding to evaluations by independent observers. $\alpha = 1/2$ is used for the concentration hyperparameter in the prior distribution. }
 \end{figure}
+
 Figure \ref{fig:xpl-turk1013} shows a lineup and the corresponding posterior densities of the lineup after evaluation by \Sexpr{sum(turk1013.picks[i, "counts"][[1]][[1]])} independent observers. Plots 4 and 14 appear to have attracted the attention of most of the observers; one individual identified plot 10 instead.
 
 \begin{figure}
@@ -340,8 +334,8 @@ Figure \ref{fig:xpl-turk1013} shows a lineup and the corresponding posterior den
 \includegraphics[width=\textwidth]{lineup-images/34fcf946135adb1c03b147897f20b33d.pdf}
 \end{subfigure}
 \begin{subfigure}[b]{.49\textwidth}
-\caption{\label{fig:posterior}Posterior densities for the choosing panel \#$i$. }
-<<pics, dependson='posterior', echo=FALSE,  fig.width=8, fig.height = 8, out.width='\\textwidth'>>=
+\caption{\label{fig:posterior}Posterior densities for the choosing panel \#$i$.}
+<<pics, dependson='posterior', echo=FALSE,  fig.width=6, fig.height =6, out.width='\\textwidth'>>=
 
 # show one of the results:
 i <- 1
@@ -372,7 +366,7 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
 
 @
 \end{subfigure}
-\caption{\label{fig:xpl-104} Lineup (left) and posterior densities (right) corresponding to evaluations by independent observers.}
+\caption{\label{fig:xpl-104} Lineup (left) and posterior densities (right) corresponding to evaluations by independent observers. $\alpha = 1/2$ is used for the concentration hyperparameter in the prior distribution; this corresponds to 10 pseudo-observations distributed evenly across all 20 panels.}
 \end{figure}
 
 For each individual panel of the lineup, the marginal distributions are Beta distributions. For the distribution of picking panel $i$ the prior distribution is therefore a Beta distribution Beta$(1, 19)$. In the example of Figure~\ref{fig:posterior} we have a Beta distribution of Beta$(\Sexpr{counts[11]+ alpha[11]}, \Sexpr{sum(alpha)+sum(counts)-counts[11]-alpha[11]})$ for panel \#11 and Beta$(\Sexpr{counts[20]+ alpha[20]}, \Sexpr{sum(alpha)+sum(counts)-counts[20]-alpha[20]})$ for panel \#20.
@@ -384,9 +378,9 @@ In order to assess the strength of the signal of plot \#$i$, we calculate the Ba
 It is well established (XXX Citations...) that even when lineups which consist entirely of null plots are used, observers tend to focus on certain features which randomly appear in a null plot, producing a nonuniform distribution of panel identifications. This is an artifact of human perception: when asked to identify a ``most different" plot, we examine features which vary between the options to determine which feature to use when evaluating all options. Because of this, it is more useful to calculate Bayes factors for each panel in the lineup than to calculate a single overall Bayes factor for the entire lineup. This is similar to calculating the p-value for the target plot relative to the null plots in the frequentist calculation. If there were a desire to establish a Bayes factor representative of the entire plot, it would be the Bayes factor for the target plot (if it exists).
 \svp{This is a bit hand-wavey, and I'm not sure it's correct at this point.}
 
-The two models which contribute to the Bayes factor have the same likelihood function and the same prior distribution function, but the models have different hyperparameters. Model 1 uses a Beta(0.5, 9.5) distribution, which is the marginal distribution for one plot corresponding to the Dirichlet(.5) distribution which jointly represents all 20 plots\footnote{The Dirichlet(.5) distribution is Jeffrey's noninformative prior which is the conjugate prior for the Multinomial distribution.}; Model 2 uses a Beta(20, 380) distribution and represents a strong prior belief that all 20 plots are equally likely to be selected. This distribution has marginal distributions equivalent to the Beta(20, 380) distribution, which has a mean of 0.05 and standard deviation of \Sexpr{round(sqrt((20*380)/(400^2*401)), 3)}.
+The two models which contribute to the Bayes factor have the same likelihood function and the same prior distribution function, but the models have different hyperparameters. Model 1 uses a Beta(0.5, 9.5) distribution, which is the marginal distribution for one plot corresponding to the Dirichlet(.5) distribution which jointly represents all 20 plots\footnote{The Dirichlet(.5) distribution is Jeffrey's noninformative prior which is the conjugate prior for the Multinomial distribution.}; Model 2 uses a Beta(20, 380) distribution and represents a strong prior belief that all 20 plots are equally likely to be selected. This distribution is the marginal (single panel) version of the Dirichlet(20) distribution, and has a mean of 0.05 and standard deviation of \Sexpr{round(sqrt((20*380)/(400^2*401)), 3)}.
 
-Model 1 contains information corresponding to 10 pseudo-evaluations, evenly distributed across all panels in the lineup; Model 2 contains information corresponding to 400 pseudo-evaluations, with 20 pseudo-evaluations allocated to each panel in the sub-plot. Figure \ref{fig:prior-model2} shows the strong prior used in Model 2 and can be compared to figure \ref{fig:prior}, which shows the noninformative prior used in Model 1.
+Model 1 contains information corresponding to 10 pseudo-evaluations, evenly distributed across all panels in the lineup; Model 2 contains information corresponding to 400 pseudo-evaluations, with 20 pseudo-evaluations allocated to each panel in the sub-plot. Figure \ref{fig:prior}(b) shows the strong prior used in Model 2 and can be compared to figure \ref{fig:prior}(a), which shows the noninformative prior used in Model 1.
 
 More formally,
 \begin{align}
@@ -418,65 +412,6 @@ BF(M_1, M_2) & = \frac{\int_p P(M_1) f(c_i, K|p) \pi_1(p) dp}{\int_p P(M_2) f(c_
 & = \frac{B(20, 380)}{B(\frac{1}{2}, \frac{19}{2})}
     \frac{B(c_i + \frac{1}{2}, K - c_i + \frac{19}{2})}{B(c_i + 20, K - c_i + 380)}
 \end{align}
-
-% This calculation allows us to not only assess the strength of the observers' preference for each panel relative to the uniform probability model; in a two-target lineup, the Bayes factors for each target plot can be used to calculate a Bayes factor which assesses the strength of the two competing alternative hypotheses. If we consider the marginal distribution for each target plot individually, we calculate separate Bayes factors for each target plot.
-%
-% \begin{align}
-% M_{11} & :=  \text{Beta-Binomial model with Jeffrey's prior, for target plot 1}\nonumber\\
-% M_{12} & :=  \text{Beta-Binomial model with Jeffrey's prior, for target plot 2}\nonumber\\
-% M_2 & :=  \text{Beta model (equivalent to Jeffrey's prior)}\nonumber\\
-% BF_1 & =  P(M_{11}|c)/P(M_2|c)\nonumber\\
-% & =  \frac{\int_{p} P(M_{11}) f_1(c|p) \pi(p) dp}{\int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber\\
-% BF_2 & =  P(M_{12}|c)/P(M_2|c)\nonumber\\
-% & =  \frac{\int_{p} P(M_{12}) f_1(c|p) \pi(p) dp}{\int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber\\
-% BF_{1,2} & =  BF_1/BF_2\\
-% & =  \frac{\int_{p} P(M_{11}) f_1(c|p) \pi(p) dp/ \int_p P(M_2) f_2(c|p)\pi(p) dp}{\int_{p} P(M_{12}) f_1(c|p) \pi(p) dp / \int_p P(M_2) f_2(c|p)\pi(p) dp}\nonumber
-% & =  \frac{\int_{p} P(M_{11}) f_1(c|p) \pi(p) dp}{\int_{p} P(M_{12}) f_1(c|p) \pi(p) dp}\nonumber
-% \end{align}
-
-%
-% \svp{We need to explain the cutoff threshold a bit more - develop the ``why".}
-% \hh{XXX after discussion with Susan: put a prior uniform on the cutoff threshold $t$ - either integrate it out or find a mode in the posterior.}
-% \hh{XXX  integration seems to work out really well - what do you think? }
-%
-% In order to assess the strength of the signal of plot \#$i$, we assess the probability that an observer chooses this plot at a pre-specified level $t$ and compare the posterior probability to its prior for a Bayes factor.
-% More formally, we define the Bayes factor of choosing plot \#$i$ given threshold level $t$ as
-% \[
-% B_t(p_i) = \frac{P(p_i > t \mid x, \alpha)}{P(p_i > t \mid \alpha)},
-% \]
-% where $t$ is a pre-specified threshold with $t \in (0,1)$ and $p_i$ is the probability that an observer chooses plot \#$i$, $1 \le i \le m$, as the most different.
-% \svp{``most different" is a bit of a weird phrase given that we're allowing participants to select multiple panels. Perhaps ``observer selects plot ... as visually distinct"?}
-%
-% \svp{Is this thing $B_t$ technically a Bayes factor any more? I would think so, but I'm not sure...?\\Upon further reflection, for a single value of $t$ it's a Bayes factor over a reduced sample space, I believe. However, it doesn't make that much sense to integrate $t$ out if that's the interpretation; rather, just integrate over the entire parameter space $[0,1]$ instead.}
-%
-% The choice of $t$ is critical: a natural choice would be $t = 1/m$, where $m$ is the size of the lineup. However, the prior probability in a lineup of size 20 is $\Sexpr{round(pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 3)}$ when using the uninformative prior described above. This puts an upper limit on the Bayes factor of $\Sexpr{round(1/pbeta(1/20, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE), 2)}$ (the reciprocal value of the prior). A higher threshold allows for a higher upper limit on the Bayes factor, e.g.\ a threshold of $t = \frac{2}{m}$ already allows for a Bayes factor of up to \Sexpr{round(1/pbeta(1/20*2, shape1=alpha[1], shape2=sum(alpha)-alpha[1], lower.tail=FALSE),2)}. For the example shown in Figure~\ref{fig:xpl-104}, the posterior probabilities of picking panels \#11 and \#20 with a probability of at least $t = \frac{2}{m}$ are \Sexpr{round(probs[11],4)} and \Sexpr{round(probs[20],4)}, respectively. This corresponds to Bayes factors of  \Sexpr{round(probs[11]/preprobs[11],2)} and \Sexpr{round(probs[20]/preprobs[20],2)}.
-% An overview of the Bayes factors $B_t$ for a specific lineup is shown in Figure~\ref{fig:bt-104}.
-%
-% \begin{figure}
-% \begin{subfigure}[b]{.49\textwidth}
-% \caption{\label{fig:lp-104-bt}Example lineup. }
-% \includegraphics[width=\textwidth]{lineup-images/34fcf946135adb1c03b147897f20b33d.pdf}
-% \end{subfigure}
-% \begin{subfigure}[b]{.49\textwidth}
-% \caption{\label{fig:bfactor}Bayes factors at each value of $t \in (0,1)$. }
-% <<Bfactort, echo=FALSE, fig.width=7, fig.height=7>>=
-% x <- seq(0,0.9999, by=0.01)
-% BFS <- 1:20 %>% lapply(function(i) data.frame(i, x = x, bf=bfs[[i]])) %>% bind_rows
-% BFS$capbf <- pmin(BFS$bf, 20)
-% qplot(x, capbf,  geom="line", data= BFS) + theme_bw() +
-%   facet_wrap(facets = ~i) +
-%   ylab("Bayes factor at threshold t") +
-%   xlab("Threshold t") #+ ylim(c(0,20))
-% @
-% \end{subfigure}
-% \caption{\label{fig:bt-104} Lineup (left) and Bayes factors at threshold $t$ (right). Note that the Bayes factors for plot \#20 are capped at a value of 20. Uncapped, the Bayes factor for \#20 reaches a mode of over 300. }
-% \end{figure}
-%
-% Instead of deciding for a single value of $t$,
-% we integrate over all possible values of $t$ and get the Bayes factor for plot \#$i$ as:
-% \[
-% B(p_i) = \int_0^1 B_t(p_i) dt = \int_0^1 \frac{P(p_i > t \mid x, \alpha)}{P(p_i > t \mid \alpha)} dt.
-% \]
 
 There are different schemes interpreting the Bayes factor. \citet{jeffreys:1961} consider a factor of 5 to 10 as `substantial', and values above 20 as `decisive'.
 Alternatively, \citet{kass:1995} consider a factor of 6 to 10 as `strong', and values above 10 as `very strong'.
@@ -555,7 +490,7 @@ ggplot(data = filter(bf, type == "target") %>% select(-pic_id) %>% unique()) +
   ggtitle("Change in Bayes Factor of Target Plots with Increasing Signal")
 @
 
-Figure \ref{fig:bayes-factor-investigation-Null} shows the distribution of Bayes factors of the 19 null plots in each simulated scenario.
+The 19 null plots present in each simulated scenario produce 19 different Bayes factors for each iteration. Thus, Figure \ref{fig:bayes-factor-investigation-Null} contains boxplots are used to represent the \Sexpr{Nruns * 19} null plots produced for each $x$ between 0 and \Sexpr{Npicks}.
 <<bayes-factor-investigation-Null, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = sprintf("This graph shows the Bayes factors for the null plots in a 20 plot lineup, where the lineup is evaluated by %d individuals. The Bayes factors of the null plots are more variable when target selections are low, but converge to about 1.5 as the number of target picks increase. The blue line is a nonparametric smooth which shows the average value as the number of target picks change. Bayes factors are truncated at 10 to show the behavior of the majority of the null plot Bayes factors.", Npicks)>>=
 ggplot() +
   geom_hline(aes(yintercept = 1), color = "red") +
@@ -571,7 +506,7 @@ ggplot() +
 
 rm(tmp, bf, bf.sim)
 @
-
+\FloatBarrier
 Figure \ref{fig:bayes-factor-V3-compare} shows the simulated p-value and Bayes factor corresponding to $c$ target picks out of \Sexpr{Npicks} total evaluations, where $c$ is represented in the plot text. In most cases, the two methods produce the same outcome, but when 4 individuals out of \Sexpr{Npicks} select the target plot, the Bayes factor is under 5 while the p-value is less than 0.05; thus, the two methods do not produce identical results in all cases.
 
 <<bayes-factor-V3-compare, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = "Bayes Factors and corresponding simulated p-values from the V3 distribution used to evaluate lineups under frequentist paradigms. As Bayes factors lie in the space $(0, \\infty)$, they provide much better discrimination of the strength of the evidence. Points are represented by text indicating the number of target picks.">>=
@@ -587,10 +522,13 @@ ggplot() +
   scale_y_sqrt() +
   xlab("Bayes Factor") +
   ylab("Simulated P-value (V3 distribution)") +
-  ggtitle(sprintf("Comparison of Bayesian and Frequentist Lineup Analysis Methods with %d Lineup Evaluations", Npicks)) +
+  ggtitle(sprintf("Comparison of Bayesian and Frequentist Lineup Analysis Methods\nwith %d Lineup Evaluations", Npicks)) +
   theme(legend.position = c(1, 1), legend.justification = c(1, 1), legend.title = element_blank(), legend.background = element_rect(fill = "transparent"))
 @
 
+\FloatBarrier
+Figure \ref{fig:xpl-114} shows a sample lineup and the corresponding posterior densities; in each posterior density panel, the Bayes factor is printed at the top right. Figure \ref{fig:xpl-124} shows a similar lineup with 24 evaluations; as the number of evaluations increases, the Bayes factor blows up.
+\svp{There has to be a better way to put this.}
 \begin{figure}
 \begin{subfigure}[b]{.49\textwidth}
 \caption{\label{fig:lp-114}Example lineup. }
@@ -598,7 +536,7 @@ ggplot() +
 \end{subfigure}
 \begin{subfigure}[b]{.49\textwidth}
 \caption{\label{fig:posterior2}Posterior densities for the choosing panel \#$i$. }
-<<pics2, dependson='posterior', echo=FALSE,  fig.width=8, fig.height = 8, out.width='\\textwidth'>>=
+<<pics2, dependson='posterior', echo=FALSE,  fig.width=6, fig.height =6, out.width='\\textwidth'>>=
 
 # show one of the results:
 i <- 2
@@ -637,7 +575,7 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
 \end{subfigure}
 \begin{subfigure}[b]{.49\textwidth}
 \caption{\label{fig:posterior2}Posterior densities for the choosing panel \#$i$. }
-<<pics3, dependson='posterior', echo=FALSE,  fig.width=8, fig.height = 8, out.width='\\textwidth'>>=
+<<pics3, dependson='posterior', echo=FALSE,  fig.width=6, fig.height =6, out.width='\\textwidth'>>=
 dname <- gsub("-turk16","", subset(pics19, pic_id == 104)$data_name)
 dname <- gsub("sd\\.","sd", dname)
 dname <- gsub("trend", "line", dname)
@@ -677,10 +615,8 @@ qplot(value, geom="density", data=lpsXXXm, fill=I("grey50"),
 \caption{\label{fig:xpl-124} Lineup (left) and posterior densities (right) corresponding to evaluations by independent observers.}
 \end{figure}
 
-\hh{can we combine multiple lineups?}
-\svp{You mean compare which plots are most likely to be selected out of several sets of sub-plots? That's an interesting idea, but I'm not sure that there's an obvious way to do that... Unless you just ``integrate" over multiple lineups and selections? That can't be valid, can it?}
-
-\hh{XXX Bayesian equivalent of a logistic regression with random effects, jags? }
+% \hh{can we combine multiple lineups?} %% No. The likelihood portion of the equation wouldn't be the same.
+% \hh{XXX Bayesian equivalent of a logistic regression with random effects, jags? }
 \bibliographystyle{asa}
 \bibliography{references}
 
