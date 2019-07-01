@@ -96,8 +96,9 @@ p(\bm\theta | \bm{c}, \bm{\alpha}) & \sim Dirichlet(\bm{c + \alpha})
 \end{split}\end{align}
 
 
-Initially, we assume that all plots are equally likely to be selected by a participant, that is, $\bm{\alpha} = \alpha$ ($\alpha_i = \alpha_j$ for all $i,j$), but the concentration parameter allows us to vary this belief.
+Initially, we assume that all plots are equally likely to be selected by a participant, that is, $\bm{\alpha} = \alpha$ ($\alpha_i = \alpha_j$ for all $i,j$), but the concentration parameter allows us to vary this belief. We observe that $\sum_{i=1}^m \alpha_i$ corresponds to the equivalent number of observations provided by the prior; that is,
 
+Visual inference usually utilizes a null hypothesis of the form `the plot of the data is not different from the null plots'. As we do not have any evidence to believe a priori that one plot is more likely to be selected, we will use a noninformative prior which sets all $\alpha_i$ values to be equal. Jeffreys prior for the Dirichlet distribution has $\alpha = 0.5$ for all $\alpha_i$; as the sum of the concentration parameters $\sum \alpha$ can be interpreted as the number of pseudo-evaluations under the null hypothesis, this w XXX stopped here
 
 % Derive bayes factors for plots based on one-target lineups
 
