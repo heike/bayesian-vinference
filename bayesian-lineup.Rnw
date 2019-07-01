@@ -1,0 +1,111 @@
+\documentclass[12pt]{article}
+\usepackage{amssymb}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{bm}
+\usepackage{multirow}
+\usepackage{hyperref}
+% \usepackage{endfloat} % Figures to the end of the document
+
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+%---------------------------------------------------
+%                 Editing Commands
+\newcommand{\hh}[1]{{\color{magenta} #1}}
+\newcommand{\svp}[1]{{\color{orange} #1}}
+\newcommand{\fix}[1]{{\color{red} #1}}
+
+%---------------------------------------------------
+%                 Placing Figures
+\usepackage[font=small,skip=5pt]{caption}
+\usepackage{subcaption}
+\usepackage{afterpage}
+\usepackage{rotating}
+\usepackage[dvipsnames,svgnames,table]{xcolor}
+\graphicspath{{figure/}}
+
+%---------------------------------------------------
+% Define new environment
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{algorithm}[theorem]{Algorithm}
+%---------------------------------------------------
+
+%\pdfminorversion=4
+% NOTE: To produce blinded version, replace "0" with "1" below.
+\newcommand{\blind}{0}
+
+% DON'T change margins - should be 1 inch all around.
+\addtolength{\oddsidemargin}{-.5in}%
+\addtolength{\evensidemargin}{-.5in}%
+\addtolength{\textwidth}{1in}%
+\addtolength{\textheight}{1.3in}%
+\addtolength{\topmargin}{-.8in}%
+
+
+\begin{document}
+
+%\bibliographystyle{natbib}
+
+\def\spacingset#1{\renewcommand{\baselinestretch}{#1}\small\normalsize}
+\spacingset{1}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\if0\blind {
+  \title{\bf A Bayesian approach to visual inference}
+  \author{Susan VanderPlas, Heike Hofmann\thanks{
+    The authors gratefully acknowledge funding from the National Science Foundation Grant \# DMS 1007697. All data collection has been conducted with approval from the Institutional Review Board IRB 10-347}\hspace{.2cm}\\
+    Department of Statistics and Statistical Laboratory, Iowa State University}%
+  \maketitle%
+} \fi
+
+\if1\blind {
+  \bigskip
+  \bigskip
+  \bigskip
+  \begin{center}
+    {\LARGE\bf A Bayesian approach to visual inference}
+\end{center}
+  \medskip
+} \fi
+
+\section{Introduction}
+
+% Introduction to graphical testing: Rorschach vs. Visual Inference
+
+% Graphical Testing vs. Statistical Testing - power improvements w/ additional people
+
+% Something about the power of the human visual system? Don't want to get too off topic...
+
+\section{A Bayesian's Statistical Lineup}
+While visual inference was initially developed to mimic frequentist hypothesis tests with the standard threshold of $p = 0.05$, the method itself is agnostic. In this section, we show one possible Bayesian framework for visual inference, using a Dirichlet-multinomial distribution to represent the probabilities of selecting each subplot and the observed participant selections.
+
+\subsection{One-target Lineup Model Specification}
+We will begin with a generic $m$-panel lineup, with selection probabilities $\theta_i, i = 1, ..., m$ where $\sum_{i=1}^m \theta_i = 1$, that is, the participant will select one (and only one) panel from the lineup as the most different. Our lineup has been evaluated by $K$ individuals, with $c_i, i = 1, ..., m$ the selection count for each panel, and $K = \sum_{i=1}^m c_i$. A natural data model for this data is the Multinomial distribution, which has parameters $N, \bm{\theta}$, where $N$ describes the total number of events (that is, $N=K$) and $\bm{\theta} = \theta_1, ..., \theta_m$ describes the probabilities of each event occurring. We will fix $K$, as that is something controlled by the experimental design, and model $\bm{\theta}$.
+
+A priori, we assign prior probability to $p$ using a Dirichlet distribution with concentration hyperparameter $\bm{\alpha}$, which happens to be conjugate to the multinomial distribution.
+
+Using the conjugate relationship between the Dirichlet and Multinomial distributions, we then get the posterior distribution as the Dirichlet$(\bm{c + \alpha})$ distribution.
+\begin{align}\begin{split}
+(\alpha_1, ..., \alpha_m) = \bm{\alpha} &= \text{concentration hyperparameter}\\
+(c_1, ..., c_m) = \bm{c} &= \text{observed plot selections}, \sum_{i=1}^m c_i = K\\
+p(\bm{\theta}) &\sim Dirichlet(\bm\alpha) \\
+f(\bm{c} | \bm{\theta}) & \sim Multinomial(\bm\theta, K)\\
+p(\bm\theta | \bm{c}, \bm{\alpha}) & \sim Dirichlet(\bm{c + \alpha})
+\end{split}\end{align}
+
+
+Initially, we assume that all plots are equally likely to be selected by a participant, that is, $\bm{\alpha} = \alpha$ ($\alpha_i = \alpha_j$ for all $i,j$), but the concentration parameter allows us to vary this belief.
+
+
+% Derive bayes factors for plots based on one-target lineups
+
+
+\section{}
+
+
+
+
+
+\end{document}
