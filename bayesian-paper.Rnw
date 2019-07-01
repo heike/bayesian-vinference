@@ -25,6 +25,7 @@
 \newcommand{\eh}[1]{{\color{cyan} #1}}
 
 \usepackage[colorinlistoftodos]{todonotes}
+\setlength{\marginparwidth}{2cm}
 %                 Editing Commands
 \newcommand{\done}[2][inline]{\todo[color=SpringGreen, #1]{#2}}  % for todos that have been seen and dealt with
 \newcommand{\meh}[2][inline]{\todo[color=White, #1]{#2}}   % for todos that may no longer be relevant
@@ -61,26 +62,24 @@
 
 %\bibliographystyle{natbib}
 
-\def\spacingset#1{\renewcommand{\baselinestretch}%
-{#1}\small\normalsize} \spacingset{1}
+\def\spacingset#1{\renewcommand{\baselinestretch}{#1}\small\normalsize}
+\spacingset{1}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\if0\blind
-{
+\if0\blind {
   \title{\bf A Bayesian approach to visual inference}
   \author{Susan VanderPlas, Eric Hare\thanks{
     The authors gratefully acknowledge funding from the National Science Foundation Grant \# DMS 1007697. All data collection has been conducted with approval from the Institutional Review Board IRB 10-347}\hspace{.2cm}\\
     Department of Statistics and Statistical Laboratory, Iowa State University\\
     and \\
     Heike Hofmann\\
-    Department of Statistics and Statistical Laboratory, Iowa State University}
-  \maketitle
+    Department of Statistics and Statistical Laboratory, Iowa State University}%
+  \maketitle%
 } \fi
 
-\if1\blind
-{
+\if1\blind {
   \bigskip
   \bigskip
   \bigskip
@@ -116,7 +115,7 @@ library(purrr)
 @
 
 \section{Introduction}
-Graphics are an important component of big data analysis, providing a mechanism for discovering unexpected patterns in data. Pioneering research by \citet{gelman:2004}, \citet{buja:2009} and \citet{majumder:2011} provide methods to quantify the significance of discoveries made from visualizations.
+Graphics are an important component of big data analysis, providing a mechanism for discovering unexpected patterns in data. Pioneering research by \citet{gelman:2004}, \citet{buja:2009} and \citet{majumder2013validation} provide methods to quantify the significance of discoveries made from visualizations.
 %Although, there have been major advances in statistical graphics over the years, for example, systems like R \citep{R} provide high quality static graphics, and very recently some access to interactive graphics. But the problem remains that graphics are not widely considered to be a part of inferential statistics.
 \citet{buja:2009} introduced two protocols, the Rorschach and the lineup protocol, which bridge the gulf between traditional statistical inference and exploratory data analysis. The Rorschach protocol consists of a set of $m$ (usually, $m=20$) plots (called the {\it null plots}) rendered from data that is consistent with a given null model. That way, the Rorschach protocol helps to understand the extent of randomness in the null model. Under the lineup protocol, a plot of the observed data is placed randomly among a set of $m-1$ null plots.
 Human observers are then asked to  examine the lineup and to identify the most different plot. If observers identify the data plot, this is quantifiable evidence against the null hypothesis.
@@ -135,7 +134,7 @@ The lineup protocol was formally tested in a head-to-head comparison with the eq
 Statistical lineups typically consist of 20 plots which are then evaluated by $K$ individuals. Conceptually, if most individuals are able to identify a single target plot surrounded by 19 null plots, this would correspond to a statistical test which is significant at the $p < 0.05$ level. Calculation of the visual p-value is a bit more complicated in reality, as discussed in \citet{majumder2013validation}. For a lineup of size $m$ (usually 20), the probability that at least $x$ observers select the target plot is
 \begin{eqnarray}
 P(X \geq x) &= 1 - \text{Binom}_{K, 1/m}(x-1)\\
-& = \sum_{i=1}^K\binom{K}{i} \left(\frac{1}{m}\right)^i\left(\frac{m-1}{m})^{K-i}
+& = \sum_{i=1}^K\binom{K}{i} \left(\frac{1}{m}\right)^i\left(\frac{m-1}{m}\right)^{K-i}
 \end{eqnarray}
 
 When lineups contain two targets, slight tweaks are made to the underlying probability distribution\citep[Appendix B]{vanderplas:2017}, and the resulting p-value must be obtained by simulation. There is a less natural interpretation of the p-values resulting from a two-target lineup, as there are two competing alternative hypotheses in this scenario. A much more natural approach to the two-target lineup is to consider the evidence for each of two hypotheses relative to the null hypothesis using a Bayesian approach.
@@ -196,7 +195,6 @@ qplot(value, geom="density", data=lpsm, fill=I("grey50"),
 @
 \caption{Two different Dirichlet($\alpha$) priors for a lineup with 20 panels. \label{fig:prior}}
 \end{figure}
-\FloatBarrier
 
 The posterior distribution is then as follows:
 \begin{align*}
@@ -415,7 +413,6 @@ BF(M_1, M_2) & = \frac{\int_p P(M_1) f(c_i, K|p) \pi_1(p) dp}{\int_p P(M_2) f(c_
 
 There are different schemes interpreting the Bayes factor. \citet{jeffreys:1961} consider a factor of 5 to 10 as `substantial', and values above 20 as `decisive'.
 Alternatively, \citet{kass:1995} consider a factor of 6 to 10 as `strong', and values above 10 as `very strong'.
-\FloatBarrier
 
 \paragraph{Simulation Study}
 
@@ -506,7 +503,7 @@ ggplot() +
 
 rm(tmp, bf, bf.sim)
 @
-\FloatBarrier
+
 Figure \ref{fig:bayes-factor-V3-compare} shows the simulated p-value and Bayes factor corresponding to $c$ target picks out of \Sexpr{Npicks} total evaluations, where $c$ is represented in the plot text. In most cases, the two methods produce the same outcome, but when 4 individuals out of \Sexpr{Npicks} select the target plot, the Bayes factor is under 5 while the p-value is less than 0.05; thus, the two methods do not produce identical results in all cases.
 
 <<bayes-factor-V3-compare, echo = F, fig.width = 7, fig.height = 3.5, fig.cap = "Bayes Factors and corresponding simulated p-values from the V3 distribution used to evaluate lineups under frequentist paradigms. As Bayes factors lie in the space $(0, \\infty)$, they provide much better discrimination of the strength of the evidence. Points are represented by text indicating the number of target picks.">>=
@@ -526,7 +523,6 @@ ggplot() +
   theme(legend.position = c(1, 1), legend.justification = c(1, 1), legend.title = element_blank(), legend.background = element_rect(fill = "transparent"))
 @
 
-\FloatBarrier
 Figure \ref{fig:xpl-114} shows a sample lineup and the corresponding posterior densities; in each posterior density panel, the Bayes factor is printed at the top right. Figure \ref{fig:xpl-124} shows a similar lineup with 24 evaluations; as the number of evaluations increases, the Bayes factor blows up.
 \svp{There has to be a better way to put this.}
 \begin{figure}
