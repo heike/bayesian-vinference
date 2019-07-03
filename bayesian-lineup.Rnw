@@ -104,7 +104,8 @@ In the standard analysis of a lineup plot, with $C$ data detections in $K$ indep
 This value has been computed in the past by simulation (assuming $\alpha=1$), but the more general solution is useful to consider in this context. The visual p-value is then compared to a threshold of 0.05, and if it is smaller, we reject the hypothesis that every plot is equally likely to be selected.
 
 Bayes factors are somewhat analogous to the frequentist hypothesis test, but to construct a bayes factor for a lineup, we would want to consider the marginal distribution consisting of the number of data detections and the number of null detections, as the primary factor in lineup evaluation is whether the data plot can be detected from among the collective set of null plots.
-\todo{add marginal distribution - beta binomial model}
+\todo{add marginal distribution - beta binomial model. Discuss meaning of $\alpha$ in this context - added observations}
+
 From this point, we would compare two possible models which are different in the specification of the prior distribution:
 
 \begin{description}
@@ -134,7 +135,11 @@ BF(M_1, M_2)_i  =& \frac{\displaystyle\int_\theta p(\theta | \alpha_{M_1}) f(K, 
 \todo{Show Bayes Factor for one single-target and one two-target lineup}
 
 \section{Alpha and Null Plots}
+One issue with lineup experiments is that participants sometimes identify features in the null plots which are interesting, but not necessarily on the same dimension as the interesting feature in the data plot. \todo{Cite feature hierarchy paper, explain what features participants cued into}. In some cases, this is because the lineup is particularly challenging, but in others, it can be an indicator that the null plot generation model is not adequately reproducing features in the data.  - \todo{cite Adam's normality diagnostic paper} In large lineup experiments, it can be difficult to screen every plot for these issues, resulting in systematic issues such as those in \todo{Cite feature hierarchy}. One possible solution is to run a small pilot study in which a Rorshach lineup is used to examine the selection frequency of different null plots. If one or two null plots are systematically selected from this Rorshach lineup, then the data-generating model may need to be examined.
+
 \todo{Estimation of alpha from the null plot selections, with a default of ?? if no null plots are selected.} \svp{I know we talked about the default, I just don't remember what it was...}
+
+
 
 
 
