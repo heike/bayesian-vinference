@@ -12,8 +12,9 @@
 %---------------------------------------------------
 %                 Editing Commands
 \newcommand{\hh}[1]{{\color{magenta} #1}}
-\newcommand{\svp}[1]{{\color{orange} #1}}
-\newcommand{\fix}[1]{{\color{red} #1}}
+\newcommand{\svp}[1]{{\color{darkgray} #1}}
+\newcommand{\fix}[1]{{\color{blue} #1}}
+\newcommand{\todo}[1]{{\color{purple} #1}}
 
 %---------------------------------------------------
 %                 Placing Figures
@@ -81,10 +82,10 @@
 \section{A Bayesian's Statistical Lineup}
 While visual inference was initially developed to mimic frequentist hypothesis tests with the standard threshold of $p = 0.05$, the method itself is agnostic. In this section, we show one possible Bayesian framework for visual inference, using a Dirichlet-multinomial distribution to represent the probabilities of selecting each subplot and the observed participant selections.
 
-\subsection{One-target Lineup Model Specification}
+\subsection{Lineup Model Specification}
 We will begin with a generic $m$-panel lineup, with selection probabilities $\theta_i, i = 1, ..., m$ where $\sum_{i=1}^m \theta_i = 1$, that is, the participant will select one (and only one) panel from the lineup as the most different. Our lineup has been evaluated by $K$ individuals, with $c_i, i = 1, ..., m$ the selection count for each panel, and $K = \sum_{i=1}^m c_i$. A natural data model for this data is the Multinomial distribution, which has parameters $N, \bm{\theta}$, where $N$ describes the total number of events (that is, $N=K$) and $\bm{\theta} = \theta_1, ..., \theta_m$ describes the probabilities of each event occurring. We will fix $K$, as that is something controlled by the experimental design, and model $\bm{\theta}$.
 
-A priori, we assign prior probability to $p$ using a Dirichlet distribution with concentration hyperparameter $\bm{\alpha}$, which happens to be conjugate to the multinomial distribution.
+We assign prior probability to $p$ using a Dirichlet distribution with concentration hyperparameter $\bm{\alpha}$, which happens to be conjugate to the multinomial distribution. As the position of the panels within the lineup are random, we typically use $\alpha_i = \alpha, i = 1, ..., m$, that is, the concentration hyperparameter is constant.
 
 Using the conjugate relationship between the Dirichlet and Multinomial distributions, we then get the posterior distribution as the Dirichlet$(\bm{c + \alpha})$ distribution.
 \begin{align}\begin{split}
@@ -95,16 +96,45 @@ f(\bm{c} | \bm{\theta}) & \sim Multinomial(\bm\theta, K)\\
 p(\bm\theta | \bm{c}, \bm{\alpha}) & \sim Dirichlet(\bm{c + \alpha})
 \end{split}\end{align}
 
+\todo{Discussion of the meaning of $\alpha$ - simplex, triangle plots}
 
-Initially, we assume that all plots are equally likely to be selected by a participant, that is, $\bm{\alpha} = \alpha$ ($\alpha_i = \alpha_j$ for all $i,j$), but the concentration parameter allows us to vary this belief. We observe that $\sum_{i=1}^m \alpha_i$ corresponds to the equivalent number of observations provided by the prior; that is,
 
-Visual inference usually utilizes a null hypothesis of the form `the plot of the data is not different from the null plots'. As we do not have any evidence to believe a priori that one plot is more likely to be selected, we will use a noninformative prior which sets all $\alpha_i$ values to be equal. Jeffreys prior for the Dirichlet distribution has $\alpha = 0.5$ for all $\alpha_i$; as the sum of the concentration parameters $\sum \alpha$ can be interpreted as the number of pseudo-evaluations under the null hypothesis, this w XXX stopped here
+\subsection{Bayes Factors vs. P-values}
+In the standard analysis of a lineup plot, with $C$ data detections in $K$ independent evaluations, a visual p-value is calculated using the mass function $$P(C\geq x) = \sum_{x = C}^{K} \binom{K}{x} \frac{1}{B(\alpha, (m-1)\alpha)}\cdot B(x+\alpha, K-x+(m-1)\alpha)$$
+This value has been computed in the past by simulation (assuming $\alpha=1$), but the more general solution is useful to consider in this context. The visual p-value is then compared to a threshold of 0.05, and if it is smaller, we reject the hypothesis that every plot is equally likely to be selected.
+
+Bayes factors are somewhat analogous to the frequentist hypothesis test, but to construct a bayes factor for a lineup, we would want to consider the marginal distribution consisting of the number of data detections and the number of null detections, as the primary factor in lineup evaluation is whether the data plot can be detected from among the collective set of null plots.
+\todo{add marginal distribution - beta binomial model}
+From this point, we would compare two possible models which are different in the specification of the prior distribution:
+
+\begin{description}
+\item[M1] $\alpha < 1$ - a small value of $\alpha$ would indicate that one or two of the plots might tend to be selected more frequently.
+\item [M2] $\alpha \geq 1$ - a large value of $\alpha$ would suggest that each plot is (approximately) equally likely to be selected.
+\end{description}
 
 % Derive bayes factors for plots based on one-target lineups
+Let $\alpha_{M_1} < 1$ be the prior concentration hyperparameter for model 1, and $\alpha_{M_2} \geq 1$ be the prior concentration hyperparamer for model 2. If we assume that both models are equally likely a priori, then the prior model odds cancel, and we can derive the bayes factor comparing model 1 to model 2 for panel $i$ in a lineup as:
+\begin{align}
+BF(M_1, M_2)_i  =& \frac{\displaystyle\int_\theta p(\theta | \alpha_{M_1}) f(K, c_i | \theta, \alpha_{M_1}) d\theta}
+                        {\displaystyle\int_\theta p(\theta | \alpha_{M_2}) f(K, c_i | \theta, \alpha_{M_2}) d\theta} \nonumber\\
+= &\frac{\displaystyle\int_\theta \binom{K}{c_i} \theta^{c_i} (1 - \theta)^{K - c_i}
+         \frac{1}{B(\alpha_{M_1}, (m-1) \alpha_{M_1})} \theta^{\alpha_{M_1}} (1-\theta)^{(m-1) \alpha_{M_1}} d\theta}
+        {\displaystyle\int_\theta \binom{K}{c_i} \theta^{c_i} (1 - \theta)^{K - c_i}
+         \frac{1}{B(\alpha_{M_2}, (m-1) \alpha_{M_2})} \theta^{\alpha_{M_2}} (1-\theta)^{(m-1) \alpha_{M_2}} d\theta}\nonumber\\
+= &\frac{B(\alpha_{M_2}, (m-1)\alpha_{M_2})}{B(\alpha_{M_1}, (m-1)\alpha_{M_1})}
+   \frac{B(c_i + \alpha_{M_1}, K - c_i + (m-1)\alpha_{M_1})}{B(c_i + \alpha_{M_2}, K - c_i + (m-1)\alpha_{M_2})} \times \nonumber\\
+  &\frac{\displaystyle\int_\theta \frac{1}{B(c_i + \alpha_{M_1}, K - c_i + (m-1)\alpha_{M_1})} \theta^{c_i + \alpha_{M_1} - 1} (1-\theta)^{K - c_i + (m-1)\alpha_{M_1} - 1} d\theta}
+        {\displaystyle\int_\theta \frac{1}{B(c_i + \alpha_{M_2}, K - c_i + (m-1)\alpha_{M_2})} \theta^{c_i + \alpha_{M_2} - 1} (1-\theta)^{K - c_i + (m-1)\alpha_{M_2} - 1} d\theta}\nonumber\\
+ = & \frac{B(\alpha_{M_2}, (m-1)\alpha_{M_2})}{B(\alpha_{M_1}, (m-1)\alpha_{M_1})}
+\frac{B(c_i + \alpha_{M_1}, K - c_i + (m-1)\alpha_{M_1})}{B(c_i + \alpha_{M_2}, K - c_i + (m-1)\alpha_{M_2})}
+\end{align}
 
+\todo{Plots to show the effect of different values of $\alpha_{M_1}, \alpha_{M_2}$}
 
-\section{}
+\todo{Show Bayes Factor for one single-target and one two-target lineup}
 
+\section{Alpha and Null Plots}
+\todo{Estimation of alpha from the null plot selections, with a default of ?? if no null plots are selected.} \svp{I know we talked about the default, I just don't remember what it was...}
 
 
 
