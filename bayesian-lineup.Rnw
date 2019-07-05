@@ -3,6 +3,7 @@
 \usepackage{natbib}
 \usepackage{amsmath}
 \usepackage{amsfonts}
+\usepackage{mathrsfs}
 \usepackage{bm}
 \usepackage{multirow}
 \usepackage{hyperref}
@@ -45,7 +46,7 @@
 
 \begin{document}
 
-%\bibliographystyle{natbib}
+% \bibliographystyle{natbib}
 
 \def\spacingset#1{\renewcommand{\baselinestretch}{#1}\small\normalsize}
 \spacingset{1}
@@ -78,14 +79,17 @@
 % Graphical Testing vs. Statistical Testing - power improvements w/ additional people
 
 % Something about the power of the human visual system? Don't want to get too off topic...
-
+<<setup, echo = F, include = F>>=
+library(tidyverse)
+knitr::opts_chunk$set(echo = F, message = F)
+@
 \section{A Bayesian's Statistical Lineup}
-While visual inference was initially developed to mimic frequentist hypothesis tests with the standard threshold of $p = 0.05$, the method itself is agnostic. In this section, we show one possible Bayesian framework for visual inference, using a Dirichlet-multinomial distribution to represent the probabilities of selecting each subplot and the observed participant selections.
+While visual inference was initially developed to mimic frequentist hypothesis tests with the standard threshold of $p = 0.05$, the method itself does not require adherence to frequentist methods. In this section, we show one possible Bayesian framework for visual inference, using a Dirichlet-multinomial distribution to represent the probabilities of selecting each subplot and the observed participant selections.
 
 \subsection{Lineup Model Specification}
 We will begin with a generic $m$-panel lineup, with selection probabilities $\theta_i, i = 1, ..., m$ where $\sum_{i=1}^m \theta_i = 1$, that is, the participant will select one (and only one) panel from the lineup as the most different. Our lineup has been evaluated by $K$ individuals, with $c_i, i = 1, ..., m$ the selection count for each panel, and $K = \sum_{i=1}^m c_i$. A natural data model for this data is the Multinomial distribution, which has parameters $N, \bm{\theta}$, where $N$ describes the total number of events (that is, $N=K$) and $\bm{\theta} = \theta_1, ..., \theta_m$ describes the probabilities of each event occurring. We will fix $K$, as that is something controlled by the experimental design, and model $\bm{\theta}$.
 
-We assign prior probability to $p$ using a Dirichlet distribution with concentration hyperparameter $\bm{\alpha}$, which happens to be conjugate to the multinomial distribution. As the position of the panels within the lineup are random, we typically use $\alpha_i = \alpha, i = 1, ..., m$, that is, the concentration hyperparameter is constant.
+We assign prior probability to $p$ using a Dirichlet distribution with concentration hyperparameter $\bm{\alpha}$, which happens to be conjugate to the multinomial distribution. As the position of the panels within the lineup are random, we use a symmetric Dirichlet distribution, with $\alpha_i = \alpha, i = 1, ..., m$, that is, the concentration hyperparameter is constant.
 
 Using the conjugate relationship between the Dirichlet and Multinomial distributions, we then get the posterior distribution as the Dirichlet$(\bm{c + \alpha})$ distribution.
 \begin{align}\begin{split}
@@ -96,17 +100,32 @@ f(\bm{c} | \bm{\theta}) & \sim Multinomial(\bm\theta, K)\\
 p(\bm\theta | \bm{c}, \bm{\alpha}) & \sim Dirichlet(\bm{c + \alpha})
 \end{split}\end{align}
 
-\todo{Discussion of the meaning of $\alpha$ - simplex, triangle plots}
+% Stolen from heike/lineup-scenarios
+When $\alpha = 1$ the symmetric Dirichlet distribution is uniform on the $m-1$ dimensional simplex. When $\alpha < 1$ the mass of the distribution is along the edges of the simplex, where most values of $\theta_i$ will be close to 0. When $\alpha>1$, the mass of the distribution is in the center of the simplex, with most of the $\theta_i$ having similar values. \autoref{fig:simplex} shows ternary plots of values simulated from a 3-dimensional Dirichlet distribution which illustrate this effect.
 
+<<simplex, echo=FALSE, out.width='\\textwidth', fig.width=12, fig.height=4, fig.cap = "Dirichlet distributed samples on the 2-dimensional simplex.">>=
+simplex <- purrr::map_df(.x = c(1/3, 1, 3), ~data.frame(
+  gtools::rdirichlet(5000, alpha = rep(.x, 3))
+), .id = "alpha") %>%
+  rename(p1 = X1, p2 = X2, p3 = X3) %>%
+  mutate(alphalabel = factor(alpha, levels = 1:3, labels = c("alpha: 1/3", "alpha: 1", "alpha: 3")))
+
+ggtern::ggtern(aes(x = p1, y = p2, z = p3), data = simplex) +
+  geom_point(alpha = .075, shape = 16) +
+  facet_wrap(~alphalabel, labeller = "label_parsed") +
+  theme(panel.background = element_rect(colour = "black"))
+@
+% End stolen from heike/lineup-scenarios
+
+In conjunction with the Multinomial data model and a symmetric Dirichlet prior, $\alpha$ provides the equivalent of pseudo-observations for each plot; that is, the effect of $\alpha$ is equivalent to adding $\alpha$ observations to each panel in the lineup. When $\alpha$ is small, these pseudo-observations have relatively little influence, but when $\alpha$ is large, the pseudo-observations can quickly dwarf any information provided by the data.
 
 \subsection{Bayes Factors vs. P-values}
 In the standard analysis of a lineup plot, with $C$ data detections in $K$ independent evaluations, a visual p-value is calculated using the mass function $$P(C\geq x) = \sum_{x = C}^{K} \binom{K}{x} \frac{1}{B(\alpha, (m-1)\alpha)}\cdot B(x+\alpha, K-x+(m-1)\alpha)$$
 This value has been computed in the past by simulation (assuming $\alpha=1$), but the more general solution is useful to consider in this context. The visual p-value is then compared to a threshold of 0.05, and if it is smaller, we reject the hypothesis that every plot is equally likely to be selected.
 
-Bayes factors are somewhat analogous to the frequentist hypothesis test, but to construct a bayes factor for a lineup, we would want to consider the marginal distribution consisting of the number of data detections and the number of null detections, as the primary factor in lineup evaluation is whether the data plot can be detected from among the collective set of null plots.
-\todo{add marginal distribution - beta binomial model. Discuss meaning of $\alpha$ in this context - added observations}
+Bayes factors are somewhat analogous to the frequentist hypothesis test, but to construct a bayes factor for a lineup, we would want to consider the marginal distribution consisting of the number of data detections and the number of null detections, as the primary factor in lineup evaluation is whether the data plot can be detected from among the collective set of null plots. The marginal beta-binomial model considers the data detections and the aggregated null-plot detections; as a result, the parameters of the posterior beta distribution are $C + \alpha, K - C + (m-1)\alpha$.
 
-From this point, we would compare two possible models which are different in the specification of the prior distribution:
+In order to construct a Bayes Factor which would be roughly equivalent to the standard lineup evaluation, we would compare two models with different hyperparameters: the model structure is the same, but in the first model, we would expect one or two of the panels to be selected more frequently; in the second, we would expect all panels to be selected approximately equally.
 
 \begin{description}
 \item[M1] $\alpha < 1$ - a small value of $\alpha$ would indicate that one or two of the plots might tend to be selected more frequently.
@@ -130,16 +149,95 @@ BF(M_1, M_2)_i  =& \frac{\displaystyle\int_\theta p(\theta | \alpha_{M_1}) f(K, 
 \frac{B(c_i + \alpha_{M_1}, K - c_i + (m-1)\alpha_{M_1})}{B(c_i + \alpha_{M_2}, K - c_i + (m-1)\alpha_{M_2})}
 \end{align}
 
-\todo{Plots to show the effect of different values of $\alpha_{M_1}, \alpha_{M_2}$}
+<<bayes-factors-alphas, fig.width = 8, fig.height = 4, fig.cap = "Bayes factor values at different levels of $\\alpha_1$ and $\\alpha_2$. If there are large numbers of data panel identifications, the Bayes Factor will be large even with conservative parameter values (e.g. $\\alpha_1$ near 1, $\\alpha_2 =  2$). The choice of alphas is much more impactful when there are fewer data plot identifications." >>=
+bf <- function(a1, a2, m, c, k) {
+  stopifnot(a1 > 0, a2 > 0, c <= k, m > 1)
+
+  beta(a2, (m - 1)*a2) * beta(c + a1, k - c + (m - 1)*a1) /
+    (beta(a1, (m - 1)*a1) * beta(c + a2, k - c + (m - 1)*a2))
+}
+
+
+
+breaks <-  c(2, 5, 10, 20)
+data_breaks <- c(1, 3, 5, 10)
+
+
+p01 <- tidyr::crossing(a1 = seq(.01, 1, .01),
+                a2 = breaks,
+                m = 20,
+                k = 20,
+                c = data_breaks) %>%
+  mutate(bf = purrr::pmap_dbl(., bf)) %>%
+  mutate(a2f = factor(a2, levels = unique(a2), labels = sprintf("alpha[2] == %f", unique(a2)), ordered = T)) %>%
+  ggplot(aes(x = a1, y = bf, color = factor(c), group = factor(c))) +
+  geom_line() +
+  scale_y_log10("Bayes Factor") +
+  scale_x_continuous(expression(alpha[1])) +
+  scale_color_discrete("# Data\nPanel\nIdentifications\n(K = 20)", guide = F) +
+  facet_wrap(~a2f, labeller = "label_parsed")
+
+p02 <- tidyr::crossing(a2 = seq(1.5, 20, by = 0.1),
+                a1 = 1/breaks,
+                m = 20,
+                k = 20,
+                c = data_breaks) %>%
+  mutate(bf = purrr::pmap_dbl(., bf)) %>%
+  mutate(a2f = factor(a2, levels = unique(a2),
+                      labels = sprintf("alpha[2] == %f", unique(a2)),
+                      ordered = T)) %>%
+  mutate(a1f = factor(a1, levels = 1/rev(breaks),
+                     labels = sprintf("alpha[1] == 1/%f", rev(breaks)),
+                     ordered = T)) %>%
+  ggplot(aes(x = a2, y = bf, color = factor(c), group = factor(c))) +
+  geom_line() +
+  scale_y_log10("Bayes Factor") +
+  scale_x_continuous(expression(alpha[2])) +
+  scale_color_discrete("# Data\nPanel\nIdentifications\n(K = 20)") +
+  facet_wrap(~a1f, labeller = "label_parsed")
+
+gridExtra::grid.arrange(p01, p02, nrow = 1, widths = c(.425, .575))
+@
+\autoref{fig:bayes-factors-alphas} shows Bayes Factors for combinations of $\alpha_1, \alpha_2$ over several different $C$ values, assuming a total of $K=20$ independent evaluations.
 
 \todo{Show Bayes Factor for one single-target and one two-target lineup}
 
 \section{Alpha and Null Plots}
-One issue with lineup experiments is that participants sometimes identify features in the null plots which are interesting, but not necessarily on the same dimension as the interesting feature in the data plot. \todo{Cite feature hierarchy paper, explain what features participants cued into}. In some cases, this is because the lineup is particularly challenging, but in others, it can be an indicator that the null plot generation model is not adequately reproducing features in the data.  - \todo{cite Adam's normality diagnostic paper} In large lineup experiments, it can be difficult to screen every plot for these issues, resulting in systematic issues such as those in \todo{Cite feature hierarchy}. One possible solution is to run a small pilot study in which a Rorshach lineup is used to examine the selection frequency of different null plots. If one or two null plots are systematically selected from this Rorshach lineup, then the data-generating model may need to be examined.
+One issue with lineup experiments is that participants sometimes identify features in the null plots which are interesting, but not necessarily on the same dimension as the interesting feature in the data plot. In some cases, this is because the lineup is particularly challenging, but in others, it can be an indicator that the null plot generation model is not adequately reproducing features in the data.  - \todo{cite Adam's normality diagnostic paper} In large lineup experiments, it can be difficult to screen every plot for these issues, resulting in systematic problems such as those in \citet{vanderplas:2017}, where clustering algorithms applied to null plot data occasionally resulted in clusters of 1-3 points.
 
-\todo{Estimation of alpha from the null plot selections, with a default of ?? if no null plots are selected.} \svp{I know we talked about the default, I just don't remember what it was...}
+One possible solution is to run a small pilot study in which a Rorshach lineup is used to examine the selection frequency of different null plots. If one or two null plots are systematically selected from this Rorshach lineup, then the data-generating model may need to be examined. \svp{In addition, it may be possible to estimate $\alpha_2$ from the null plots alone and compare to $\alpha_1$ estimated from all of the plots. XXX this is nuts, right? I'm not even sure it would be valid, but I think crazier things have been done in the name of Empirical Bayes...}
+
+In order to estimate $\alpha$ from the null plots of a lineup, let $m_0$ be the number of null plots in an $m$- panel lineup. If the lineup is a Rorshach lineup, then $m=m_0$. We can estimate $\alpha$ using a set of such lineups, $j=1, ..., n$. The likelihood function is then
+\begin{align}
+\mathscr{L}(\alpha|\theta) &= \prod_{j=1}^n \left(\frac{1}{B(\alpha)}\right)^{m_0} \prod_{i=1}^{m_0} \theta_{ij}^{\alpha - 1}\nonumber\\
+& = \left(\frac{\Gamma(\alpha m_0)}{\left(\Gamma(\alpha)\right)^{m_0}}\right)^n \prod_{ij} \theta^{\alpha-1}_{ij}
+\end{align}
+and the derivative of the log-likelihood function can be calculated as
+\begin{align}
+\ln \mathscr{L}(\alpha|\theta) & = n \ln \Gamma(\alpha m_0) - nm_0\ln\Gamma(\alpha) + \sum_{ij}(\alpha-1)\ln \theta_{ij}\nonumber\\
+\frac{d}{d\alpha}\ln \mathscr{L}(\alpha|\theta) &= nm_0\psi(\alpha m_0) - nm_0\psi(\alpha) + \sum_{ij} log \theta_{ij}
+\end{align}
+where $\psi(x)$ is the digamma function, $\psi(x) = \frac{d}{dx}\ln\Gamma(x)$.
+Setting this to zero, we find that the MLE of $\alpha$ can be obtained empirically from the sum of the log probabilities $p_{ij}$.
+\begin{align}
+0 &= nm_0\psi(\alpha m_0) - nm_0\psi(\alpha) + \sum_{ij} \ln \theta_{ij} \nonumber\\
+nm_0\psi(\alpha) - nm_0\psi(\alpha m_0) &= \sum_{ij} \ln \theta_{ij}\nonumber\\
+\psi(\alpha) - \psi(\alpha m_0) & = \frac{1}{nm_0}\sum_{ij} \ln \theta_{ij} \label{eqn:mle}
+\end{align}
+The second derivative of the log likelihood function uses the trigamma function, $\psi_1(x) = \frac{d^2}{dx^2} \ln \Gamma(x)$. $\psi_1(x)$ can also be defined using the series $\psi_1(x) = \sum_{z=0}^\infty \frac{1}{(z + n)^2}$. Thus,
+\begin{align}
+\frac{d^2}{d\alpha^2}\ln \mathscr{L}(\alpha|\theta) &= nm_0^2\psi_1(\alpha m_0) - nm_0\psi_1(\alpha)\\
+& = nm_0^2\left(\sum_{x=0}^\infty \frac{1}{(\alpha m_0 + x)^2} - \sum_{x=0}^\infty \frac{1}{m_0(\alpha + x)^2}\right)\nonumber\\
+& = nm_0^2\sum_{x=0}^\infty \left(\frac{1}{(\alpha m_0 + x)^2} - \frac{1}{m_0(\alpha + x)^2}\right) \leq 0 \text{ for } m \geq 1, \alpha > 0 \nonumber
+\end{align}
+
+Thus, the MLE of $\alpha$ satisfies \autoref{eqn:mle}.
+
+\todo{default of ?? if no null plots are selected.} \svp{I know we talked about the default, I just don't remember what it was...}
 
 
+\bibliographystyle{asa}
+\bibliography{references}
 
 
 
