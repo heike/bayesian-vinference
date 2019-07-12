@@ -30,7 +30,7 @@ alpha.ml <- function(p, weight = NULL, eps = 10^(-7)) {
 }
 
 pic_data <- read_csv("data/Turk16/data-picture-details-gini.csv")
-t16_res <- read_csv("data/Turk16/turk16_results.csv", col_types = "_c__cc__c") %>%
+t16_res <- read_csv("data/Turk16/turk16_results_anon.csv", col_types = "_c__cc___") %>%
   mutate(pic_id = str_trim(pic_id) %>% as.numeric()) %>%
   filter(!is.na(pic_id)) %>%
   mutate(nick_name = as.numeric(factor(nick_name))) %>%

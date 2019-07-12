@@ -82,24 +82,54 @@
 <<setup, echo = F, include = F>>=
 library(tidyverse)
 knitr::opts_chunk$set(echo = F, message = F)
+# theme_set(theme_bw())
 @
+
 \section{A Bayesian's Statistical Lineup}
 While visual inference was initially developed to mimic frequentist hypothesis tests with the standard threshold of $p = 0.05$, the method itself does not require adherence to frequentist methods. In this section, we show one possible Bayesian framework for visual inference, using a Dirichlet-multinomial distribution to represent the probabilities of selecting each subplot and the observed participant selections.
 
 \subsection{Lineup Model Specification}
-We will begin with a generic $m$-panel lineup, with selection probabilities $\theta_i, i = 1, ..., m$ where $\sum_{i=1}^m \theta_i = 1$, that is, the participant will select one (and only one) panel from the lineup as the most different. Our lineup has been evaluated by $K$ individuals, with $c_i, i = 1, ..., m$ the selection count for each panel, and $K = \sum_{i=1}^m c_i$. A natural data model for this data is the Multinomial distribution, which has parameters $N, \bm{\theta}$, where $N$ describes the total number of events (that is, $N=K$) and $\bm{\theta} = \theta_1, ..., \theta_m$ describes the probabilities of each event occurring. We will fix $K$, as that is something controlled by the experimental design, and model $\bm{\theta}$.
+We will begin with a generic $m$-panel lineup, with selection probabilities $\theta_i, i = 1, ..., m$ where $\sum_{i=1}^m \theta_i = 1$, that is, the participant will select one (and only one) panel from the lineup as the most different. Our lineup has been evaluated by $K$ individuals, with $c_i, i = 1, ..., m$ the selection count for each panel, and $K = \sum_{i=1}^m c_i$.
 
-We assign prior probability to $p$ using a Dirichlet distribution with concentration hyperparameter $\bm{\alpha}$, which happens to be conjugate to the multinomial distribution. As the position of the panels within the lineup are random, we use a symmetric Dirichlet distribution, with $\alpha_i = \alpha, i = 1, ..., m$, that is, the concentration hyperparameter is constant.
+A natural data model for this data is the Multinomial distribution, which has parameters $N, \bm{\theta}$, where $N$ describes the total number of events (that is, $N=K$) and $\bm{\theta} = \theta_1, ..., \theta_m$ describes the probabilities of each event occurring. We will fix $K$, as that is controlled by the experimental design, and model $\bm{\theta}$.
+
+\begin{align}\label{eqn:multinomial-pmf}
+f(\bm{c}|K, \bm{\theta}) & = \frac{K!}{c_1! \cdots c_m!} \prod_{i=1}^m \theta_i^{c_i}
+\end{align}
+
+We assign prior probability to $p$ using a Dirichlet distribution with concentration hyperparameter $\bm{\alpha}$, which happens to be conjugate to the multinomial distribution. As the position of the panels within the lineup are random, we use a symmetric Dirichlet distribution, with $\alpha_i = \alpha, i = 1, ..., m$, that is, the concentration hyperparameter is constant. This allows us to vary the lineup difficulty through the hyperparameter $\alpha$ without having to specify which plot $i$ is the target plot.
+
+The pdf of the symmetric Dirichlet distribution is
+\begin{align}\label{eqn:dirichlet-pdf}
+f(\bm{\theta}|\alpha) & = \frac{\left(\Gamma(\alpha)\right)^m}{\Gamma(m\alpha)} \prod_{i=1}^m \theta_i^{\alpha - 1}
+\end{align}
 
 Using the conjugate relationship between the Dirichlet and Multinomial distributions, we then get the posterior distribution as the Dirichlet$(\bm{c + \alpha})$ distribution.
+
 \begin{align}\begin{split}
 (\alpha_1, ..., \alpha_m) = \bm{\alpha} &= \text{concentration hyperparameter}\\
 (c_1, ..., c_m) = \bm{c} &= \text{observed plot selections}, \sum_{i=1}^m c_i = K\\
 p(\bm{\theta}) &\sim Dirichlet(\bm\alpha) \\
 f(\bm{c} | \bm{\theta}) & \sim Multinomial(\bm\theta, K)\\
-p(\bm\theta | \bm{c}, \bm{\alpha}) & \sim Dirichlet(\bm{c + \alpha})
+p(\bm\theta | \bm{c}, \bm{\alpha}) & \sim Dirichlet(\bm{c} + \bm\alpha})
 \end{split}\end{align}
 
+where $Multinomial(\bm\theta, K)$ is defined as in \autoref{eqn:multinomial-pmf} and $Dirichlet(\bm\alpha)$ is defined as in \autoref{eqn:dirichlet-pdf}.
+
+Typically, when evaluating lineups, we compare the number of target plot identifications with the aggregate number of null plot identifications (see \citet{majumder2013validation}). This is equivalent to the marginal distribution of $c_t$, where $t \in 1, ..., m$ is the index of the target panel in the lineup. The equivalent Bayesian version takes the form of a Beta-Binomial model. The frequentist model assumes $\theta_t = 1/m$, that is, $\theta_t$ is fixed and equal to the selection probability of every other panel in the lineup.
+
+\begin{align}\begin{split}
+\alpha &= \text{concentration hyperparameter}\\
+c_t &= \text{target plot selections},
+K &= \text{total evaluations}\\
+p(\theta_t) &\sim Beta(\alpha, (m-1)\alpha) \\
+f(c_t | \theta_t) & \sim Binomial(\theta_t, K)\\
+p(\theta_t | \bm{c_t}, \alpha) & \sim Beta(c_t + \alpha, K - c_t + (m-1)\alpha)
+
+We know that it is unreasonable to assume that the selection probability of every null plot is equal: null plots are randomly generated, and occasionally, the randomly generated plot will have an interesting feature (that may or may not be present in the target plot). When that occurs, the interesting null plot will be selected more frequently than the other nulls, despite being generated by the same distribution. The human perceptual process is very efficient at identifying differences - it was important to be able to spot a predator amongst the leaves, and as a result, we will gravitate towards a plot which is different on some measure, if not the measure that's under investigation. As a result, it's important to understand the effect of $\alpha$ on the posterior distribution.
+
+
+\subsection{Dirichlet Hyperparameter}
 % Stolen from heike/lineup-scenarios
 When $\alpha = 1$ the symmetric Dirichlet distribution is uniform on the $m-1$ dimensional simplex. When $\alpha < 1$ the mass of the distribution is along the edges of the simplex, where most values of $\theta_i$ will be close to 0. When $\alpha>1$, the mass of the distribution is in the center of the simplex, with most of the $\theta_i$ having similar values. \autoref{fig:simplex} shows ternary plots of values simulated from a 3-dimensional Dirichlet distribution which illustrate this effect.
 
@@ -117,7 +147,7 @@ ggtern::ggtern(aes(x = p1, y = p2, z = p3), data = simplex) +
 @
 % End stolen from heike/lineup-scenarios
 
-In conjunction with the Multinomial data model and a symmetric Dirichlet prior, $\alpha$ provides the equivalent of pseudo-observations for each plot; that is, the effect of $\alpha$ is equivalent to adding $\alpha$ observations to each panel in the lineup. When $\alpha$ is small, these pseudo-observations have relatively little influence, but when $\alpha$ is large, the pseudo-observations can quickly dwarf any information provided by the data.
+In conjunction with the Multinomial data model and a symmetric Dirichlet prior, $\alpha$ provides the equivalent of pseudo-observations for each plot; that is, the effect of $\alpha$ is equivalent to adding $\alpha$ observations to each panel in the lineup. When $\alpha$ is small, these pseudo-observations have relatively little influence, but when $\alpha$ is large, the pseudo-observations can quickly dwarf any information provided by the data. This is particularly true for the marginal Beta-Binomial model, where the equivalent of $(m-1)\alpha$ pseudo-observations are added. In most lineup studies, a plot might be evaluated between 20-40 times; with a $m=20$ lineup, $\alpha = 1$ can easily dominate the data.
 
 \subsection{Bayes Factors vs. P-values}
 In the standard analysis of a lineup plot, with $C$ data detections in $K$ independent evaluations, a visual p-value is calculated using the mass function $$P(C\geq x) = \sum_{x = C}^{K} \binom{K}{x} \frac{1}{B(\alpha, (m-1)\alpha)}\cdot B(x+\alpha, K-x+(m-1)\alpha)$$
@@ -149,7 +179,7 @@ BF(M_1, M_2)_i  =& \frac{\displaystyle\int_\theta p(\theta | \alpha_{M_1}) f(K, 
 \frac{B(c_i + \alpha_{M_1}, K - c_i + (m-1)\alpha_{M_1})}{B(c_i + \alpha_{M_2}, K - c_i + (m-1)\alpha_{M_2})}
 \end{align}
 
-<<bayes-factors-alphas, fig.width = 8, fig.height = 4, fig.cap = "Bayes factor values at different levels of $\\alpha_1$ and $\\alpha_2$. If there are large numbers of data panel identifications, the Bayes Factor will be large even with conservative parameter values (e.g. $\\alpha_1$ near 1, $\\alpha_2 =  2$). The choice of alphas is much more impactful when there are fewer data plot identifications." >>=
+<<bayes-factors-alphas, fig.width = 8, fig.height = 4, fig.cap = "Bayes factor values at different levels of $\\alpha_1$ and $\\alpha_2$. If there are large numbers of data panel identifications, the Bayes Factor will be large even with conservative parameter values (e.g. $\\alpha_1$ near 1, $\\alpha_2 =  2$). The choice of alphas is much more impactful when there are fewer data plot identifications. While the criteria for interpretation of Bayes factors vary, a result of $>20$ is generally considered to correspond to strong evidence toward $M_1$ over $M_2$." >>=
 bf <- function(a1, a2, m, c, k) {
   stopifnot(a1 > 0, a2 > 0, c <= k, m > 1)
 
@@ -160,7 +190,7 @@ bf <- function(a1, a2, m, c, k) {
 
 
 breaks <-  c(2, 5, 10, 20)
-data_breaks <- c(1, 3, 5, 10)
+data_breaks <- c(1, 3, 5, 8, 10)
 
 
 p01 <- tidyr::crossing(a1 = seq(.01, 1, .01),
@@ -172,7 +202,7 @@ p01 <- tidyr::crossing(a1 = seq(.01, 1, .01),
   mutate(a2f = factor(a2, levels = unique(a2), labels = sprintf("alpha[2] == %f", unique(a2)), ordered = T)) %>%
   ggplot(aes(x = a1, y = bf, color = factor(c), group = factor(c))) +
   geom_line() +
-  scale_y_log10("Bayes Factor") +
+  scale_y_log10("Bayes Factor", breaks = c(1, 10, 100, 1000, 10000)) +
   scale_x_continuous(expression(alpha[1])) +
   scale_color_discrete("# Data\nPanel\nIdentifications\n(K = 20)", guide = F) +
   facet_wrap(~a2f, labeller = "label_parsed")
@@ -184,14 +214,14 @@ p02 <- tidyr::crossing(a2 = seq(1.5, 20, by = 0.1),
                 c = data_breaks) %>%
   mutate(bf = purrr::pmap_dbl(., bf)) %>%
   mutate(a2f = factor(a2, levels = unique(a2),
-                      labels = sprintf("alpha[2] == %f", unique(a2)),
+                      labels = sprintf("alpha[2] == ~~%f", unique(a2)),
                       ordered = T)) %>%
   mutate(a1f = factor(a1, levels = 1/rev(breaks),
-                     labels = sprintf("alpha[1] == 1/%f", rev(breaks)),
+                     labels = sprintf("alpha[1] == ~~1/%f", rev(breaks)),
                      ordered = T)) %>%
   ggplot(aes(x = a2, y = bf, color = factor(c), group = factor(c))) +
   geom_line() +
-  scale_y_log10("Bayes Factor") +
+  scale_y_log10("Bayes Factor", breaks = c(1, 10, 100, 1000, 10000)) +
   scale_x_continuous(expression(alpha[2])) +
   scale_color_discrete("# Data\nPanel\nIdentifications\n(K = 20)") +
   facet_wrap(~a1f, labeller = "label_parsed")
@@ -200,6 +230,10 @@ gridExtra::grid.arrange(p01, p02, nrow = 1, widths = c(.425, .575))
 @
 \autoref{fig:bayes-factors-alphas} shows Bayes Factors for combinations of $\alpha_1, \alpha_2$ over several different $C$ values, assuming a total of $K=20$ independent evaluations.
 
+Examining the performance of this Bayes factor with an actual lineup from \citet{loyAreYouNormal2015}, we can see that the ... XXX
+
+
+
 \todo{Show Bayes Factor for one single-target and one two-target lineup}
 
 \section{Alpha and Null Plots}
@@ -207,6 +241,7 @@ One issue with lineup experiments is that participants sometimes identify featur
 
 One possible solution is to run a small pilot study in which a Rorshach lineup is used to examine the selection frequency of different null plots. If one or two null plots are systematically selected from this Rorshach lineup, then the data-generating model may need to be examined. \svp{In addition, it may be possible to estimate $\alpha_2$ from the null plots alone and compare to $\alpha_1$ estimated from all of the plots. XXX this is nuts, right? I'm not even sure it would be valid, but I think crazier things have been done in the name of Empirical Bayes...}
 
+% modified from heike/lineup-scenarios
 In order to estimate $\alpha$ from the null plots of a lineup, let $m_0$ be the number of null plots in an $m$- panel lineup. If the lineup is a Rorshach lineup, then $m=m_0$. We can estimate $\alpha$ using a set of such lineups, $j=1, ..., n$. The likelihood function is then
 \begin{align}
 \mathscr{L}(\alpha|\theta) &= \prod_{j=1}^n \left(\frac{1}{B(\alpha)}\right)^{m_0} \prod_{i=1}^{m_0} \theta_{ij}^{\alpha - 1}\nonumber\\
@@ -215,16 +250,18 @@ In order to estimate $\alpha$ from the null plots of a lineup, let $m_0$ be the 
 and the derivative of the log-likelihood function can be calculated as
 \begin{align}
 \ln \mathscr{L}(\alpha|\theta) & = n \ln \Gamma(\alpha m_0) - nm_0\ln\Gamma(\alpha) + \sum_{ij}(\alpha-1)\ln \theta_{ij}\nonumber\\
-\frac{d}{d\alpha}\ln \mathscr{L}(\alpha|\theta) &= nm_0\psi(\alpha m_0) - nm_0\psi(\alpha) + \sum_{ij} log \theta_{ij}
+\frac{d}{d\alpha}\ln \mathscr{L}(\alpha|\theta) &= nm_0\psi(\alpha m_0) - nm_0\psi(\alpha) + \sum_{ij} \ln \theta_{ij}
 \end{align}
 where $\psi(x)$ is the digamma function, $\psi(x) = \frac{d}{dx}\ln\Gamma(x)$.
-Setting this to zero, we find that the MLE of $\alpha$ can be obtained empirically from the sum of the log probabilities $p_{ij}$.
+Setting this to zero, we find that the MLE of $\alpha$ can be obtained empirically from the sum of the log probabilities $\theta_{ij}$.
 \begin{align}
 0 &= nm_0\psi(\alpha m_0) - nm_0\psi(\alpha) + \sum_{ij} \ln \theta_{ij} \nonumber\\
 nm_0\psi(\alpha) - nm_0\psi(\alpha m_0) &= \sum_{ij} \ln \theta_{ij}\nonumber\\
 \psi(\alpha) - \psi(\alpha m_0) & = \frac{1}{nm_0}\sum_{ij} \ln \theta_{ij} \label{eqn:mle}
 \end{align}
-The second derivative of the log likelihood function uses the trigamma function, $\psi_1(x) = \frac{d^2}{dx^2} \ln \Gamma(x)$. $\psi_1(x)$ can also be defined using the series $\psi_1(x) = \sum_{z=0}^\infty \frac{1}{(z + n)^2}$. Thus,
+% end modified from heike/lineup scenarios
+
+The second derivative of the log likelihood function uses the trigamma function, $\psi_1(x) = \frac{d^2}{dx^2} \ln \Gamma(x)$. $\psi_1(x)$ can also be written as the series $\psi_1(x) = \sum_{z=0}^\infty \frac{1}{(z + n)^2}$. Thus,
 \begin{align}
 \frac{d^2}{d\alpha^2}\ln \mathscr{L}(\alpha|\theta) &= nm_0^2\psi_1(\alpha m_0) - nm_0\psi_1(\alpha)\\
 & = nm_0^2\left(\sum_{x=0}^\infty \frac{1}{(\alpha m_0 + x)^2} - \sum_{x=0}^\infty \frac{1}{m_0(\alpha + x)^2}\right)\nonumber\\
@@ -233,22 +270,168 @@ The second derivative of the log likelihood function uses the trigamma function,
 
 Thus, the MLE of $\alpha$ is the $\alpha$ satisfying the equation \autoref{eqn:mle}. This formulation allows for the combination of evaluations of Rorshach lineups and lineups with one or more target plots, but in order for this combination of data to be meaningful, the following conditions should hold:
 \begin{enumerate}
-\item Null plots should be generated with the same model and parameters (if applicable)
+\item Null plots should be generated by the same model
 \item Only plots with the same aesthetics should be pooled for $\alpha$ estimation
 \end{enumerate}
 
-\todo{default of ?? if no null plots are selected.} \svp{I know we talked about the default, I just don't remember what it was...}
+When estimating $\hat\alpha$ from null plot selections in a standard lineup (e.g. a lineup containing at least one target plot), there is the possibility that no null plots are selected.
+
+\todo{default of ?? if no null plots are selected.} \svp{I know we talked about the default, I just don't remember what it was... as sum(log theta) -> - infinity, alpha -> 0 from what I can tell empirically. }
 
 Intuitively, $\alpha$ describes the proportion of null plots which would have some visually interesting feature: if $\alpha$ is low, that is, $\alpha << 1$, $\theta$ generated by the model would tend to be zero, with one or two nonzero probabilities (that is, one or two of the plots would be significantly more noticable). If $\alpha$ is high, $\alpha >> 1$, $\theta$s generated by the model would be closer to $1/m_{0}$, that is, each plot would be approximately equally likely to be selected. We know that the data generating model would affect $\alpha$, and from \citet{vanderplas:2017} we know that the aesthetics significantly effect the selection of plots in a lineup.
 
-\section{Evaluating Null Plot Generation Models}
-The null plot generation model used in \citet{vanderplas:2017} had a noticeable deficiency: the aesthetics used in the plots required clustering, and the cluster size was not well-controlled, resulting in ``clusters" consisting of only of one or two points. These clusters did not allow generation of a 95\% bounding ellipse, providing an unintended feature which participants noticed, resulting in significant null plot identifications (\autoref{fig:featurehierarchy} shows two such images).
+% stolen from heike/lineup-scenarios
+<<alpha-ml, include = F>>=
+#' mle of alpha
+alpha.ml <- function(p, weight = NULL, eps = 10^(-7)) {
+  # matrix p
+  if (is.null(dim(p))) {
+    m <- length(p)
+    n <- 1
+    p <- matrix(p, nrow = 1)
+  } else {
+    n <- dim(p)[1]
+    m <- dim(p)[2]
+  }
+  if (is.null(weight)) {
+    weight <- rep(1, n)
+  } else {
+    n <- sum(weight)
+  }
 
-<<featurehierarchy, fig.width = 12, fig.height = 6, fig.cap = "A two-target lineup from \\citet{vanderplas:2017}, plotted with different aesthetic combinations. The two targets are in plot 4+7 (clustering) and 12+8 (linear trend). In plots 12 and 16, the estimation of a bounding ellipse failed due to insufficient points in the category; the allocation of points to groups in null plots did not control for number of points. This deficiency is less apparent in the plot which only has a regression line, as the aesthetics which emphasize grouping are not shown.", warning = F, message=F>>=
-lineup_dat <- read.csv("data/Turk16/Image_Data/set-1-k-3-sdline-0.25-sdgroup-0.25.csv")
+  weight <- weight / sum(weight)
+  ps <- p
+  ps[p < eps] <- eps # make sure we don't take the log of 0
+  ps <- ps / rowSums(ps)
+  logp <- sum(weight * rowSums(log(ps))) / m
+  ml <- function(alpha) {
+    digamma(alpha) - digamma(alpha * m) - logp
+  }
+  # find alpha such that digamma(alpha) - digamma(alpha*m) = logp
+  alpha <- uniroot(f = ml, interval = c(eps, 100))
+
+  alpha$root
+}
+
+@
+% end stolen from heike/lineups scenarios
+<<null-alpha-est>>=
+aes_order <- c("colorShapeEllipse", "colorTrend", "colorEllipse", "colorShape", "shape", "color", "trend", "plain", "colorEllipseTrendError", "trendError")
+pic_data <- read_csv("data/Turk16/data-picture-details-gini.csv")
+t16_res <- read_csv("data/Turk16/turk16_results_anon.csv", col_types = "_c__cc___") %>%
+  mutate(pic_id = str_trim(pic_id) %>% as.numeric()) %>%
+  filter(!is.na(pic_id)) %>%
+  mutate(response_no = purrr::map(response_no, str_split, pattern = ",", simplify = F) %>%
+           purrr::map(unlist),
+         response_no = purrr::map(response_no, as.numeric),
+         n_results = purrr::map_int(response_no, length),
+         weight = 1/n_results) %>%
+  select(-matches("ip_address|time|conf_level|choice_reason")) %>%
+  unnest(response_no) %>%
+  group_by(pic_id, response_no) %>%
+  summarize(weight = sum(weight)) %>%
+  complete(pic_id, response_no = 1:20, fill = list(weight = 0)) %>%
+  left_join(select(pic_data, test_param, obs_plot_location, pic_name, data_name) %>%
+              mutate(pic_id = 1:n())) %>%
+  filter(!is.na(response_no)) %>%
+  extract(obs_plot_location, into = c("cluster_target", "trend_target", "gini_target"),
+          regex = c("(\\d{1,}), ?(\\d{1,}), ?(\\d{1,})")) %>%
+  mutate_at(vars(cluster_target:gini_target), as.numeric) %>%
+  mutate(is_target = ((response_no == cluster_target) | (response_no == trend_target)),
+         null_no = factor(response_no*(!is_target)) %>% as.numeric %>% magrittr::subtract(1)) %>%
+  group_by(pic_id) %>%
+  mutate(null_n = sum((!is_target)*weight)) %>%
+  mutate(
+    set_number = str_extract(data_name, "set-(\\d{1,})") %>% str_remove("set-") %>% as.numeric,
+    set_type = str_remove(data_name, "set-\\d{1,}-"),
+    aes_type = str_remove(test_param, "turk16-"))
+
+t16_null_wide <- t16_res %>%
+  select(pic_id, set_number, set_type, aes_type, null_no, weight) %>%
+  group_by(pic_id, set_type, aes_type) %>%
+  filter(null_no > 0) %>%
+  mutate(n_total = sum(weight)) %>%
+  filter(n_total > 0) %>%
+  tidyr::spread(key = null_no, value = weight) %>%
+  ungroup()
+
+
+t16_null_alpha_plotwise <- t16_null_wide %>%
+  extract(set_type, into = c("k", "sdline", "sdgroup"),
+          regex = "k-([35])-sdline-([\\d\\.]{1,})-sdgroup-([\\d\\.]{1,})") %>%
+  mutate_at(vars(k, sdline, sdgroup), as.numeric) %>%
+  group_by(aes_type, set_number, k, sdline, sdgroup, pic_id, n_total) %>%
+  nest(`1`:`18`) %>%
+  mutate(alpha = purrr::map2_dbl(data, n_total,
+                                 function(x, y) alpha.ml(as.matrix(x), weight = y))) %>%
+  mutate(aes_type = factor(aes_type, levels = aes_order, ordered = T)) %>%
+  mutate(alpha_type = "null") %>%
+  group_by(k, sdline, sdgroup) %>%
+  mutate(set_min = min(set_number))
+
+t16_null_alpha_setwise <- t16_null_wide %>%
+  extract(set_type, into = c("k", "sdline", "sdgroup"),
+          regex = "k-([35])-sdline-([\\d\\.]{1,})-sdgroup-([\\d\\.]{1,})") %>%
+  mutate_at(vars(k, sdline, sdgroup), as.numeric) %>%
+  group_by(aes_type, k, sdline, sdgroup) %>%
+  nest() %>%
+  mutate(n = purrr::map(data, "n_total")) %>%
+  mutate(alpha = purrr::map2_dbl(data, n, function(x, y) alpha.ml(as.matrix(x), weight = y))) %>%
+  mutate(aes_type = factor(aes_type, levels = aes_order, ordered = T)) %>%
+  mutate(alpha_type = "null") %>%
+  mutate(n_total = purrr::map_dbl(n, sum)) %>%
+  group_by(k, sdline, sdgroup) %>%
+  mutate(set_min = min(purrr::map_dbl(data, ~min(.$set_number))),
+         set_max = max(purrr::map_dbl(data, ~max(.$set_number))))
+
+
+t16_null_alpha_aeswise <- t16_null_wide %>%
+  extract(set_type, into = c("k", "sdline", "sdgroup"),
+          regex = "k-([35])-sdline-([\\d\\.]{1,})-sdgroup-([\\d\\.]{1,})") %>%
+  mutate_at(vars(k, sdline, sdgroup), as.numeric) %>%
+  group_by(aes_type) %>%
+  nest() %>%
+  mutate(n = purrr::map(data, "n_total")) %>%
+  mutate(alpha = purrr::map2_dbl(data, n, function(x, y) alpha.ml(as.matrix(x), weight = y))) %>%
+  mutate(aes_type = factor(aes_type, levels = aes_order, ordered = T)) %>%
+  mutate(alpha_type = "null") %>%
+  mutate(n_total = purrr::map_dbl(n, sum))
+
+t16_all_wide <- t16_res %>%
+  select(pic_id, set_type, aes_type, response_no, weight) %>%
+  group_by(pic_id, set_type, aes_type) %>%
+  # filter(null_no > 0) %>%
+  mutate(n_total = sum(weight)) %>%
+  filter(n_total > 0) %>%
+  tidyr::spread(key = response_no, value = weight) %>%
+  ungroup()
+
+@
+
+
+\section{Evaluating Null Plot Generation Models}
+The null plot generation model used in \citet{vanderplas:2017} had a noticeable deficiency: the aesthetics used in the plots required clustering of the null plot data after data generation, and the cluster size was not well-controlled. As a result, some of the generated null plots contained ``clusters" consisting of only of one or two points, while other artificially imposed clusters were noticably diffuse or oddly shaped. In the case of clusters of one or two points, estimation of a 95\% bounding ellipse failed, providing an unintended feature which participants noticed, resulting in significant null plot identifications (\autoref{fig:featurehierarchy-null-model-sucks} shows two such images).
+
+<<featurehierarchy-null-model-sucks, fig.width = 12, fig.height = 6, fig.cap = "A two-target lineup from \\citet{vanderplas:2017}, plotted with different aesthetic combinations. The two targets are in plot 11+8 (clustering) and 2+2 (linear trend). In plots 10, 11, 15, and  17, the estimation of a bounding ellipse in a null plot failed due to insufficient points in the cluster. This deficiency is less apparent in the second lineup, which only has a regression line, as the aesthetics which emphasize grouping are not shown.", warning = F, message=F>>=
 plot_names <- c("plain","color", "shape", "colorShape", "colorEllipse", "colorShapeEllipse", "trend", "trendError", "colorTrend", "colorEllipseTrendError")
+fix_plot_names <- function(x) {
+  x %>%
+  str_replace("color", "Color + ") %>%
+  str_replace("[sS]hape", "Shape + ") %>%
+  str_replace("[tT]rend", "Trend + ") %>%
+  str_replace("Ellipse", "Ellipse + ") %>%
+  str_replace("Error", "Error + ") %>%
+  str_replace("plain", "Plain") %>%
+  str_replace("( \\+ )$", "") %>%
+  str_replace_all(c("Color" = "C", "Shape" = "S", "Ellipse" = "L", "Trend" = "T", "Error" = "E")) %>%
+  str_replace_all(" \\+ ", "+") %>%
+    factor(levels = c("T", "T+E", "Plain", "S", "C", "C+S", "C+L", "C+S+L", "C+T", "C+L+T+E"), ordered = T)
+}
+
 source("code/GenerateLineups.R")
-plotparms <- plot_names[10]
+lineup_dat <- read_csv("data/Turk16/Image_Data/set-46-k-5-sdline-0.45-sdgroup-0.25.csv")
+
+lineup_alphas <- filter(t16_null_alpha_plotwise, set_number == 46, aes_type %in% c("trend", "colorShapeEllipse")) %>% arrange(aes_type)
 
 gridExtra::grid.arrange(
   suppressWarnings(gen.plot(lineup_dat, c("Color", "Shape"), c("Ellipses"))) +
@@ -260,11 +443,57 @@ gridExtra::grid.arrange(
 )
 @
 
-It is reasonable to think that $\hat\alpha$ would be different for the two lineups in \autoref{fig:featurehierarchy}, as the color, shape, and ellipse aesthetics emphasize the deficiency in the null model, while this deficiency is much less apparent in the second lineup.
+It is reasonable to think that $\hat\alpha$ would be different for the two lineups in \autoref{fig:featurehierarchy-null-model-sucks} even though the underlying data is the same: the color, shape, and ellipse aesthetics emphasize the missing elements and small cluster size, while this deficiency is much less apparent in the second lineup, which contains no aesthetic cues to indicate data clustering. We can estimate plot-specific $\hat\alpha$ for each of the plots shown in figure \autoref{fig:featurehierarchy-null-model-sucks}; the values are \Sexpr{sprintf("%0.3f and %0.3f", lineup_alphas$alpha[1], lineup_alphas$alpha[2])}, respectively. Thus, in the null plots shown in the first figure, which has color, shape, and ellipse aesthetics, $\theta_i, i = 1, ..., m_0$, the selection probabilities for each plot are more similar than in the second figure, which has only a trend line aesthetic.
 
+We can examine the $\hat\alpha$ estimates for each set of aesthetics to examine this hypothesis. The full experiment details can be found in \citet{vanderplas:2017}; for the purposes of this reanalysis dealing only with the null plots, data was generated using three parameters: $k \in c(3, 5)$, the number of clusters, $\sigma_T$, the standard deviation around the trend line, and $\sigma_C$, the deviation around the cluster centers. Three values of $\sigma_T$ and $\sigma_C$ were used to represent varying degrees of difficulty, with small $\sigma$ values hypothesized to be easier than large $\sigma$ values. Thus, there are a total of 18 parameter combinations, and at each parameter combination there are 3 replicate lineup data sets, for a total of 54 datasets. Each dataset is rendered in 10 different aesthetic combinations, for a total of 540 plots.
 
+With this design in mind, individual $\hat\alpha$ values were calculated from the null plot selection data for each lineup, to get a sense of the variability in the $\hat\alpha$ estimates. In some lineups, null plots were never selected; estimates have been excluded for these plots. \autoref{fig:all-null-alphas} shows the results by aesthetic for each lineup data set used in \citet{vanderplas:2017}.
+<<all-null-alphas, fig.cap = "Alpha estimates for each lineup image, with aggregate estimates for each parameter set and aesthetic combination. There are some differences between aesthetics in average $\\hat\\alpha$, but overall, most $\\alpha$ values are estimated to be around 0.7. The variability in $\\hat\\alpha$ increases with the value of $\\sigma_C$ and $\\sigma_T$, the trend and cluster variability parameters. Note that on the y-axis, aesthetics are indicated as follows: C = color, L = ellipse, S = shape, T = trend line, E = error band. $\\hat\\alpha$s tend to be more variable when color aesthetics are present - if only one null plot has an unequal group, $\\alpha$ will tend to be very small; if more than one null plots have unequal groups, $\\alpha$ tends to be larger. Pooled estimates of the 3 plots generated with the same parameters and displayed with the same aesthetics are shown with an 'x'.", fig.width = 8, fig.height = 6>>=
 
+t16_null_alpha_plotwise %>%
+  mutate(valtype = "Individual Plot") %>%
+  bind_rows(
+    mutate(t16_null_alpha_setwise, valtype = "Pooled")
+  ) %>%
+  mutate(label = sprintf("Plots %02.0f-%02.0f", set_min, set_min+2),
+         klab = sprintf("k == %d", k),
+         siglab1 = paste("sigma[T] == ", round(sdline, 2)),
+         siglab2 = paste("sigma[C] == ", round(sdgroup, 2)),
+         aes_type = fix_plot_names(aes_type)) %>%
+ggplot(aes(x = alpha, y = aes_type, size = n_total)) +
+  scale_size_continuous("# Null Evaluations", range = c(1, 4)) +
+  geom_point(aes(shape = valtype, alpha = valtype)) +
+  scale_shape_manual("Estimate Type", values = c("Individual Plot" = 1, "Pooled" = 4)) +
+  scale_alpha_manual("Estimate Type", values = c("Individual Plot" = .5, "Pooled" = 1)) +
+  ylab("") +
+  scale_x_continuous(name = expression(alpha)) +
+  facet_grid(siglab1 ~klab + siglab2, labeller = label_parsed) +
+  theme_bw() +
+  theme(legend.position = "bottom", axis.title.y = element_blank())
+@
 
+<<all-null-alpha-pooled, fig.cap = "Alpha estimates calculated by pooling within null plot generating parameters and between null plot generating parameters. It is clear that the introduction of color and other aesthetics which highlight clustering causes an increase in $\\hat\\alpha$ estimates when data is aggregated; this effect is likely due to the inclusion of plots with several null targets with groups of noticably different sizes; there is significant variability in the $\\hat\\alpha$ estimates based on single data sets and based on single parameter sets because the randomly generated null plot data does not consistently produce the same number of null plots with this interesting characteristic.", fig.width = 4, fig.height = 5>>=
+t16_null_alpha_setwise %>%
+  mutate(valtype = "Pooled (single parameter set)") %>%
+  bind_rows(
+    mutate(t16_null_alpha_aeswise, valtype = "Pooled (all parameter sets)")
+  ) %>%
+  mutate(label = sprintf("Plots %02.0f-%02.0f", set_min, set_min+2),
+         klab = sprintf("k == %d", k),
+         siglab1 = paste("sigma[T] == ", round(sdline, 2)),
+         siglab2 = paste("sigma[C] == ", round(sdgroup, 2)),
+         aes_type = fix_plot_names(aes_type)) %>%
+ggplot(aes(x = alpha, y = aes_type)) +
+  geom_point(aes(shape = valtype, alpha = valtype)) +
+  scale_shape_manual("Estimate Type", values = c("Pooled (single parameter set)" = 4, "Pooled (all parameter sets)" = 20)) +
+  scale_alpha_manual("Estimate Type", values = c("Pooled (single parameter set)" = .5, "Pooled (all parameter sets)" = 1)) +
+  ylab("") +
+  scale_x_continuous(name = expression(alpha)) +
+  theme_bw() +
+  theme(legend.position = "bottom", axis.title.y = element_blank())
+@
+
+The estimated $\hat\alpha$ value can then be used either in the specification of the null model $\alpha$ ($\alpha_{M_2}$) or in the calculation of the visual p-value under the frequentist framework. Currently, in either scenario, the data used in the calculation are the target plot identifications and the sum of all null plot identifications; the individual values of the null plot identifications are not used. These data can be reclaimed to estimate a general $\alpha$ for the overall null model generation scheme, or, in an ideal situation, Rorshach lineups could be used to estimate $\alpha$ directly without any possible contamination effects induced by the presence of target plots.
 
 
 
