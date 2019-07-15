@@ -243,9 +243,9 @@ p02 <- tidyr::crossing(a2 = seq(1.5, 20, by = 0.1),
 
 gridExtra::grid.arrange(p01, p02, nrow = 1, widths = c(.425, .575))
 @
-\autoref{fig:bayes-factors-alphas} shows Bayes Factors for combinations of $\alpha_1, \alpha_2$ over several different $C$ values, assuming a total of $K=20$ independent evaluations.
+\autoref{fig:bayes-factors-alphas} shows Bayes Factors in the marginal case for combinations of $\alpha_1, \alpha_2$ over several different $C$ values, assuming a total of $K=20$ independent evaluations.
 
-Examining the performance of this Bayes factor with a lineup from \citet{loyAreYouNormal2015}, we can see that there is some support for the choice of model 1, which informally would correspond to ``one or two plots have a nonzero chance of selection", over model 2, which suggests all plots have a roughly similar probability of selection. The target plot, which is in panel 14,
+Examining the performance of this Bayes factor with a lineup from \citet{loyAreYouNormal2015}, we can see that there is some support for the choice of model 1, which informally would correspond to ``one or two plots have a nonzero chance of selection", over model 2, which suggests all plots have a roughly similar probability of selection. The target plot, which is in panel 14, had relatively few selections, resulting in a marginal Bayes Factor of 1.03. In the multidimensional case,
 
 <<turk13-data, fig.cap = "A lineup from \\citet{loyAreYouNormal2015} which was evaluated a total of 7 times. Number of selections $c_i$ are shown at the top left of each panel; the calculated Bayes Factors with $\\alpha_1 = 0.5$ and $\\alpha_2 = 2$ is shown at the bottom right of the target panel (panel 14). As panel 4 was selected more frequently than panel 14, there is no significant information ">>=
 library(qqplotr)
