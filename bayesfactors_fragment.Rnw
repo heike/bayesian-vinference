@@ -1,0 +1,206 @@
+\documentclass[12pt]{article}
+\usepackage{amssymb}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{mathrsfs}
+\usepackage{bm}
+\usepackage{multirow}
+\usepackage{hyperref}
+% \usepackage{endfloat} % Figures to the end of the document
+
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+%---------------------------------------------------
+%                 Editing Commands
+\newcommand{\hh}[1]{{\color{magenta} #1}}
+\newcommand{\svp}[1]{{\color{darkgray} #1}}
+\newcommand{\fix}[1]{{\color{blue} #1}}
+\newcommand{\todo}[1]{{\color{purple} #1}}
+
+%---------------------------------------------------
+%                 Placing Figures
+\usepackage[font=small,skip=5pt]{caption}
+\usepackage{subcaption}
+\usepackage{afterpage}
+\usepackage{rotating}
+\usepackage[dvipsnames,svgnames,table]{xcolor}
+\graphicspath{{figure/}}
+
+%---------------------------------------------------
+% Define new environment
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{algorithm}[theorem]{Algorithm}
+%---------------------------------------------------
+
+%\pdfminorversion=4
+% NOTE: To produce blinded version, replace "0" with "1" below.
+\newcommand{\blind}{0}
+
+% DON'T change margins - should be 1 inch all around.
+\addtolength{\oddsidemargin}{-.5in}%
+\addtolength{\evensidemargin}{-.5in}%
+\addtolength{\textwidth}{1in}%
+\addtolength{\textheight}{1.3in}%
+\addtolength{\topmargin}{-.8in}%
+
+
+\begin{document}
+
+
+\section{Bayes Factors vs. P-values}
+In the standard analysis of a lineup plot, with $C$ data detections in $K$ independent evaluations, a visual p-value is calculated using the mass function $$P(C\geq x) = \sum_{x = C}^{K} \binom{K}{x} \frac{1}{B(\alpha, (m-1)\alpha)}\cdot B(x+\alpha, K-x+(m-1)\alpha)$$
+This value has been computed in the past by simulation (assuming $\alpha=1$), but the more general solution is useful to consider in this context. The visual p-value is then compared to a threshold of 0.05, and if it is smaller, we reject the hypothesis that every plot is equally likely to be selected.
+
+Bayes factors are somewhat analogous to the frequentist hypothesis test, but to construct a bayes factor for a lineup, we would want to consider the marginal distribution consisting of the number of data detections and the number of null detections, as the primary factor in lineup evaluation is whether the data plot can be detected from among the collective set of null plots. The marginal beta-binomial model considers the data detections and the aggregated null-plot detections; as a result, the parameters of the posterior beta distribution are $C + \alpha, K - C + (m-1)\alpha$.
+
+In order to construct a Bayes Factor which would be roughly equivalent to the standard lineup evaluation, we would compare two models with different hyperparameters: the model structure is the same, but in the first model, we would expect one or two of the panels to be selected more frequently; in the second, we would expect all panels to be selected approximately equally.
+
+\begin{description}
+\item[M1] $\alpha < 1$ - a small value of $\alpha$ would indicate that one or two of the plots might tend to be selected more frequently.
+\item [M2] $\alpha \geq 1$ - a large value of $\alpha$ would suggest that each plot is (approximately) equally likely to be selected.
+\end{description}
+
+% Derive bayes factors for plots based on one-target lineups
+Let $\alpha_{M_1} < 1$ be the prior concentration hyperparameter for model 1, and $\alpha_{M_2} \geq 1$ be the prior concentration hyperparamer for model 2. If we assume that both models are equally likely a priori, then the prior model odds cancel, and we can derive the bayes factor comparing model 1 to model 2 for panel $i$ in a lineup as:
+\begin{align}
+BF(M_1, M_2)_i  =& \frac{\displaystyle\int_\theta p(\theta | \alpha_{M_1}) f(K, c_i | \theta, \alpha_{M_1}) d\theta}
+                        {\displaystyle\int_\theta p(\theta | \alpha_{M_2}) f(K, c_i | \theta, \alpha_{M_2}) d\theta} \nonumber\\
+= &\frac{\displaystyle\int_\theta \binom{K}{c_i} \theta^{c_i} (1 - \theta)^{K - c_i}
+         \frac{1}{B(\alpha_{M_1}, (m-1) \alpha_{M_1})} \theta^{\alpha_{M_1}} (1-\theta)^{(m-1) \alpha_{M_1}} d\theta}
+        {\displaystyle\int_\theta \binom{K}{c_i} \theta^{c_i} (1 - \theta)^{K - c_i}
+         \frac{1}{B(\alpha_{M_2}, (m-1) \alpha_{M_2})} \theta^{\alpha_{M_2}} (1-\theta)^{(m-1) \alpha_{M_2}} d\theta}\nonumber\\
+= &\frac{B(\alpha_{M_2}, (m-1)\alpha_{M_2})}{B(\alpha_{M_1}, (m-1)\alpha_{M_1})}
+   \frac{B(c_i + \alpha_{M_1}, K - c_i + (m-1)\alpha_{M_1})}{B(c_i + \alpha_{M_2}, K - c_i + (m-1)\alpha_{M_2})} \times \nonumber\\
+  &\frac{\displaystyle\int_\theta \frac{1}{B(c_i + \alpha_{M_1}, K - c_i + (m-1)\alpha_{M_1})} \theta^{c_i + \alpha_{M_1} - 1} (1-\theta)^{K - c_i + (m-1)\alpha_{M_1} - 1} d\theta}
+        {\displaystyle\int_\theta \frac{1}{B(c_i + \alpha_{M_2}, K - c_i + (m-1)\alpha_{M_2})} \theta^{c_i + \alpha_{M_2} - 1} (1-\theta)^{K - c_i + (m-1)\alpha_{M_2} - 1} d\theta}\nonumber\\
+ = & \frac{B(\alpha_{M_2}, (m-1)\alpha_{M_2})}{B(\alpha_{M_1}, (m-1)\alpha_{M_1})}
+\frac{B(c_i + \alpha_{M_1}, K - c_i + (m-1)\alpha_{M_1})}{B(c_i + \alpha_{M_2}, K - c_i + (m-1)\alpha_{M_2})}
+\end{align}
+
+It would also be possible to calculate a Bayes factor for the entire multidimensional vector of panel selections, but this is less useful for determining whether the target plot is noticably more likely to be selected than the null plots, as it tests all of the panels as a single unit, with no differentiation based on null or target data. Rather, the multidimensional Bayes Factor for a lineup tests whether one or more panels are more likely to be selected (compared to a model where all panels are equally likely to be selected); it does not indicate which panel(s) are more likely.
+
+\begin{align}
+BF(M_1, M_2) = &  \frac{\displaystyle\int_\theta p(\theta | \alpha_{M_1}) f(\bm{c} | \bm\theta, \alpha_{M_1}) d\bm\theta}
+                         {\displaystyle\int_\theta p(\theta | \alpha_{M_2}) f(\bm{c} | \bm\theta, \alpha_{M_2}) d\bm\theta} \nonumber\\
+              =  &  \frac
+              {\int\left(\frac{1}{B(\bm\alpha_1)} \prod_{i=1}^m \theta_i^{\alpha_1 - 1}\right)\left(\frac{\left(\sum_{i=1}^m c_i\right)!}{c_1!\times \cdots\times c_m!} \prod_{i=1}^m \theta_i^{x_i}\right) d\bm\theta}
+              {\int\left(\frac{1}{B(\bm\alpha_2)} \prod_{i=1}^m \theta_i^{\alpha_2 - 1}\right)\left(\frac{\left(\sum_{i=1}^m c_i\right)!}{c_1!\times \cdots\times c_m!} \prod_{i=1}^m \theta_i^{x_i}\right) d\bm\theta}\\
+              =  & \frac{B(\bm\alpha_2)}{B(\bm\alpha_1)}
+              \frac{\frac{\left(\sum_{i=1}^m c_i\right)!}{c_1!\times \cdots\times c_m!}}{\frac{\left(\sum_{i=1}^m c_i\right)!}{c_1!\times \cdots\times c_m!}}
+              \frac{\int \prod_{i=1}^m \theta_i^{\alpha_1 - 1 + c_i}d\bm\theta}{\int \prod_{i=1}^m \theta_i^{\alpha_2 - 1 + c_i}d\bm\theta}\\
+              = & \frac{B(\bm\alpha_2)B(\bm\alpha_1+\bm{c})}{B(\bm\alpha_1)B(\bm\alpha_2+\bm{c})}
+\end{align}
+
+<<bayes-factors-alphas, fig.width = 8, fig.height = 4, fig.cap = "Bayes factor values at different levels of $\\alpha_1$ and $\\alpha_2$. If there are large numbers of data panel identifications, the Bayes Factor will be large even with conservative parameter values (e.g. $\\alpha_1$ near 1, $\\alpha_2 =  2$). The choice of alphas is much more impactful when there are fewer data plot identifications. While the criteria for interpretation of Bayes factors vary, a result of $>20$ is generally considered to correspond to strong evidence toward $M_1$ over $M_2$." >>=
+mvbeta <- function(alpha, log = F) {
+  z <- sum(lgamma(alpha)) - lgamma(sum(alpha))
+  if (!log) return(exp(z)) else return(z)
+}
+
+bf <- function(a1, a2, m = 20, c, k = sum(c)) {
+  stopifnot(a1 > 0, a2 > 0, c <= k, m > 1)
+
+  beta(a2, (m - 1)*a2) * beta(c + a1, k - c + (m - 1)*a1) /
+    (beta(a1, (m - 1)*a1) * beta(c + a2, k - c + (m - 1)*a2))
+}
+bf_vec <- function(a1, a2, m = 20, c, k = sum(c)) {
+  stopifnot(a1 > 0, a2 > 0, c <= k, m > 1)
+
+ exp(mvbeta(rep(a2, length(c)), log = T) + mvbeta(a1 + c, log = T) -
+   mvbeta(rep(a1, length(c)), log = T) - mvbeta(a2 + c, log = T))
+}
+
+
+breaks <-  c(2, 5, 10, 20)
+data_breaks <- c(1, 3, 5, 8, 10)
+
+
+p01 <- tidyr::crossing(a1 = seq(.01, 1, .01),
+                a2 = breaks,
+                m = 20,
+                k = 20,
+                c = data_breaks) %>%
+  mutate(bf = purrr::pmap_dbl(., bf)) %>%
+  mutate(a2f = factor(a2, levels = unique(a2), labels = sprintf("alpha[2] == %f", unique(a2)), ordered = T)) %>%
+  ggplot(aes(x = a1, y = bf, color = factor(c), group = factor(c))) +
+  geom_line() +
+  scale_y_log10("Bayes Factor", breaks = c(1, 10, 100, 1000, 10000)) +
+  scale_x_continuous(expression(alpha[1])) +
+  scale_color_discrete("# Data\nPanel\nIdentifications\n(K = 20)", guide = F) +
+  facet_wrap(~a2f, labeller = "label_parsed")
+
+p02 <- tidyr::crossing(a2 = seq(1.5, 20, by = 0.1),
+                a1 = 1/breaks,
+                m = 20,
+                k = 20,
+                c = data_breaks) %>%
+  mutate(bf = purrr::pmap_dbl(., bf)) %>%
+  mutate(a2f = factor(a2, levels = unique(a2),
+                      labels = sprintf("alpha[2] == ~~%f", unique(a2)),
+                      ordered = T)) %>%
+  mutate(a1f = factor(a1, levels = 1/rev(breaks),
+                     labels = sprintf("alpha[1] == ~~1/%f", rev(breaks)),
+                     ordered = T)) %>%
+  ggplot(aes(x = a2, y = bf, color = factor(c), group = factor(c))) +
+  geom_line() +
+  scale_y_log10("Bayes Factor", breaks = c(1, 10, 100, 1000, 10000)) +
+  scale_x_continuous(expression(alpha[2])) +
+  scale_color_discrete("# Data\nPanel\nIdentifications\n(K = 20)") +
+  facet_wrap(~a1f, labeller = "label_parsed")
+
+gridExtra::grid.arrange(p01, p02, nrow = 1, widths = c(.425, .575))
+@
+\autoref{fig:bayes-factors-alphas} shows Bayes Factors in the marginal case for combinations of $\alpha_1, \alpha_2$ over several different $C$ values, assuming a total of $K=20$ independent evaluations.
+
+<<turk13-data-setup, cache = F, include = F>>=
+library(qqplotr)
+turk13 <- read_csv("data/Turk13/turk13.csv",
+                   col_types = "i_c__c___dcccic_ic_") %>%
+  mutate(indiv_id = factor(nick_name) %>% as.numeric()) %>%
+  select(pic_id, indiv_id, response_no, sample_size, test_param, param_value, obs_plot_location, pic_name, difficulty, data_name)
+
+t13_pic_details <- read_csv("data/Turk13/lineups/picture-details.csv")
+
+t13plot_data <- read_csv("data/Turk13/lineups/data/data-1-1-1-20-2-14-5.csv")
+
+counts <- filter(turk13, pic_id <= 2) %>%
+  count(response_no) %>%
+  mutate(response_no = as.numeric(response_no)) %>%
+  complete(response_no = 1:20, fill = list(n = 0)) %>%
+  mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
+  mutate(.sample_inner = response_no)
+
+@
+
+
+Examining the performance of this Bayes factor with a lineup from \citet{loyAreYouNormal2015}, shown in \autoref{fig:turk13-lineup}, we can see that there is no significant support for the choice of model 1 over model 2, or vice versa, when considering the target plot compared to all null plot selections. In this example, we have used $\alpha_1 = 0.5$ and $\alpha_2 = 2$, which are relatively weak hyperparameters. The target plot, which is in panel 14, had relatively few selections, resulting in a marginal Bayes Factor of 1.03. The full-model Bayes Factor of \Sexpr{bf_vec(1/2, 2, counts$n)} indicates that there is some evidence that all plots are not equally likely to be selected, primarily due to the multiple selections of a null plot in panel 4.
+
+<<turk13-lineup, fig.cap = sprintf("A lineup from \\citet{loyAreYouNormal2015} which was evaluated a total of %d times. Number of selections $c_i$ are shown at the top left of each panel; the calculated Bayes Factors with $\\alpha_1 = 0.5$ and $\\alpha_2 = 2$ is shown at the bottom right of the target panel (panel 14). As panel 4 was selected more frequently than panel 14, there is no significant information in favor of model 1 (the target plot is more likely to be selected than the nulls) over model 2. The multidimensional (whole plot) bayes factor with the same $\\alpha_1,\\alpha_2$ values is %.2f, indicating that there is weak to moderate evidence that all plots are not equally likely to be selected; that is, that model 1 better aligns with the observed data than model 1. Note that this evidence support is primarily due to the multiple selections of panel 4, which shows data generated by the null data model.", sum(counts$n), bf_vec(1/2, 2, c = counts$n))>>=
+t13plot_data %>%
+  ggplot() +
+  geom_ribbon(aes(x = naive1.env.fit.value, ymin = naive1.env.lower, ymax = naive1.env.upper), alpha = .1) +
+  geom_point(aes(x = naive1.qq.x, y = naive1.qq.y)) +
+  geom_abline(aes(slope = 1, intercept = 0), color = "grey30") +
+  geom_text(aes(x = -Inf, y = Inf, label = sprintf("c[%d] == %.0f", .sample_inner, n)),
+            hjust = -0.2, vjust = 1, parse = T, data = counts, inherit.aes = F) +
+  geom_text(aes(x = Inf, y = -Inf, label = sprintf("BF == %.2f", bf)),
+            vjust = -0.2, hjust = 1, parse = T, data = filter(counts, .sample_inner == 14), inherit.aes = F) +
+  facet_wrap(~.sample_inner) +
+  theme(axis.text = element_blank(), axis.title = element_blank())
+@
+
+One advantage of the Bayes factor method for single-target lineup analysis is that it seamlessly incorporates multiple target plot selections: a participant who selects $p$ panels of a lineup would contribute $1/p$ votes to each panel's total. In the frequentist model, it is not quite as easy to estimate fractional counts in a multinomial distribution.
+
+
+
+% Bayes factors become more useful, however, when used to examine a two-target lineup, where two data generating models are competing against each other, with null plots drawn from a mixture of the two distributions. In this case, for target panels $i, j$ in a $m$-panel lineup, we can calculate three single-panel bayes factors based on models $M_A$, that the first data model target is more likely to be selected, $M_B$, that the second data model target is more likely to be selected ($M_A$ and $M_B$ are separate instances of $M_1$ in the single target case, representing different target panels), and $M_U$, a generalization of $M_2$ in the single target case, which suggests that all plots are equally likely to be selected.
+% \begin{align}
+% BF(M_A, M_U)_i &=  \frac{B(\alpha_{M_U}, (m-2)\alpha_{M_U})}{B(\alpha_{M_A}, (m-2)\alpha_{M_1})}
+% \frac{B(c_i + \alpha_{M_A}, K - c_i - c_j + (m-2)\alpha_{M_A})}{B(c_i + \alpha_{M_U}, K - c_i - c_j + (m-2)\alpha_{M_U})}\\
+% BF(M_B, M_U)_j &=  \frac{B(\alpha_{M_U}, (m-2)\alpha_{M_B})}{B(\alpha_{M_2}, (m-2)\alpha_{M_2})}
+% \frac{B(c_j + \alpha_{M_B}, K - c_i - c_j + (m-2)\alpha_{M_2})}{B(c_j + \alpha_{M_U}, K - c_i - c_j + (m-2)\alpha_{M_U})}\\
+% \end{align}
+%
+% The first two, $BF(M_1, M_2)_i$ and  $BF(M_1, M_2)_j$, examine the relative likelihood of model 1 vs. model 2. \todo{The third bayes factor compares the probability of selection of plot $i$ with the probability of selection of plot $j$ to establish which data generation model is more visually salient.}
+% \todo{Possibly go into two-target lineups?}
+\end{document}
