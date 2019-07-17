@@ -205,7 +205,14 @@ We will first consider the general case of constructing a Bayes Factor for an en
 
 \subsubsection{Full Lineup Bayes Factors}
 Bayes factors are somewhat analogous to frequentist hypothesis tests \todo{cite}, but to construct a Bayes factor for a lineup, we need two models to compare.
-In order to construct a Bayes Factor which would be roughly equivalent to the standard lineup evaluation, we would compare two models with different hyperparameters: the model structure is the same, but in the first model, we would expect one or two of the panels to be selected more frequently; in the second, we would expect all panels to be selected approximately equally.
+In order to construct a Bayes Factor which would be roughly equivalent to the standard lineup evaluation, we would compare two models with different hyperparameters: the model structure is the same, but in the first model, we would expect one or two of the panels to be selected more frequently (corresponding to a low value of $\alpha$); in the second, we would expect all panels to be selected approximately equally (corresponding to a high value of $\alpha$).
+
+\begin{description}
+\item[M1] $\alpha < 1$ - a small value of $\alpha$, indicating that one or two of the plots might tend to be selected more frequently.
+\item [M2] $\alpha \geq 1$ - a large value of $\alpha$, suggesting that each plot is (approximately) equally likely to be selected.
+\end{description}
+
+\autoref{fig:prior-predictive} shows the sorted panel selection counts for several values of $\alpha$; note that even at $\alpha=1000$, all plots are not selected equally (the equivalent of the null hypothesis in the visual p-value calculation in \citet{majumder:2013}).
 
 \subsubsection{Marginal Bayes Factors for Target Plots}
 
