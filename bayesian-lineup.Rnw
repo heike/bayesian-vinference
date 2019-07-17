@@ -130,11 +130,12 @@ p(\theta_t | \bm{c_t}, \alpha) & \sim Beta(c_t + \alpha, K - c_t + (m-1)\alpha)
 From this formulation, we can construct a Bayesian analogue of the frequentist p-value proposed in \citet{majumder2013validation} using Bayes factors.
 
 
-\subsection{Dirichlet Hyperparameter}
-
 In conjunction with the Multinomial data model and a symmetric Dirichlet prior, $\alpha$ provides the equivalent of pseudo-observations for each plot; that is, the effect of $\alpha$ is equivalent to adding $\alpha$ observations to each panel in the lineup. When $\alpha$ is small, these pseudo-observations have relatively little influence, but when $\alpha$ is large, the pseudo-observations can quickly dwarf any information provided by the data. This is particularly true for the marginal Beta-Binomial model, where the equivalent of $(m-1)\alpha$ pseudo-observations are added. In most lineup studies, a plot might be evaluated between 10 and 30 times; with a $m=20$ lineup, even $\alpha = 1$ can easily dominate the participant selection data.
 
-In addition to the pseudo-observation interpretation, $\alpha$ provides information about the number of panels in a lineup which are likely to attract participant interest.
+In addition to the pseudo-observation interpretation, $\alpha$ provides information about the number of panels in a lineup which are likely to attract participant interest. It is useful to detour slightly from our Bayesian analysis of lineups to understand the impact of the value of $\alpha$ in the context of statistical lineups.
+
+\subsection{Dirichlet Hyperparameter}
+
 % Stolen from heike/lineup-scenarios
 When $\alpha = 1$ the symmetric Dirichlet distribution is uniform on the $m-1$ dimensional simplex. When $\alpha < 1$ the mass of the distribution is along the edges of the simplex, where most values of $\theta_i$ will be close to 0. When $\alpha>1$, the mass of the distribution is in the center of the simplex, with most of the $\theta_i$ having similar values. \autoref{fig:simplex} shows ternary plots of values simulated from a 3-dimensional Dirichlet distribution which illustrate this effect.
 
