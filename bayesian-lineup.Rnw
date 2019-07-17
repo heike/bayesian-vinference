@@ -234,37 +234,7 @@ The empirical solution to \autoref{eqn:mle} is thus a local maximum.
 
 % stolen from heike/lineup-scenarios
 <<alpha-ml, include = F>>=
-#' mle of alpha
-alpha.ml <- function(p, weight = NULL, eps = 10^(-7)) {
-  # matrix p
-  if (is.null(dim(p))) {
-    m <- length(p)
-    n <- 1
-    p <- matrix(p, nrow = 1)
-  } else {
-    n <- dim(p)[1]
-    m <- dim(p)[2]
-  }
-  if (is.null(weight)) {
-    weight <- rep(1, n)
-  } else {
-    n <- sum(weight)
-  }
-
-  weight <- weight / sum(weight)
-  ps <- p
-  ps[p < eps] <- eps # make sure we don't take the log of 0
-  ps <- ps / rowSums(ps)
-  logp <- sum(weight * rowSums(log(ps))) / m
-  ml <- function(alpha) {
-    digamma(alpha) - digamma(alpha * m) - logp
-  }
-  # find alpha such that digamma(alpha) - digamma(alpha*m) = logp
-  alpha <- uniroot(f = ml, interval = c(eps, 100))
-
-  alpha$root
-}
-
+source("code/alpha_ml.R")
 @
 
 % end stolen from heike/lineups scenarios
@@ -286,7 +256,8 @@ Intuitively, $\alpha$ is related to the proportion of null plots which would hav
 
 In order to illustrate the variability in $\hat\alpha$ estimates across different lineup studies and to get a sense of the range of reasonable $\hat\alpha$ values, we estimated $\alpha$ for several previous single-target lineup studies of various sizes and designs. In several of these studies, multiple panel selections were allowed; these are allocated as partial selections to each set of counts.
 
-<<null-alpha-single-target, fig.cap = "Alpha estimates for several single-target lineup studies.">>=
+
+<<null-alpha-single-target, fig.cap = "Alpha estimates for several single-target lineup studies.", warning = F, message = F>>=
 source("code/process_all_lineup_data.R")
 plot_df %>%
   ggplot(aes(x = dataset2, y = alpha, color = type, group = presentation)) +
@@ -311,96 +282,7 @@ plot_df %>%
 
 
 <<null-alpha-est>>=
-aes_order <- c("colorShapeEllipse", "colorTrend", "colorEllipse", "colorShape", "shape", "color", "trend", "plain", "colorEllipseTrendError", "trendError")
-pic_data <- read_csv("data/Turk16/data-picture-details-gini.csv")
-t16_res <- read_csv("data/Turk16/turk16_results_anon.csv", col_types = "_c__cc___") %>%
-  mutate(pic_id = str_trim(pic_id) %>% as.numeric()) %>%
-  filter(!is.na(pic_id)) %>%
-  mutate(response_no = purrr::map(response_no, str_split, pattern = ",", simplify = F) %>%
-           purrr::map(unlist),
-         response_no = purrr::map(response_no, as.numeric),
-         n_results = purrr::map_int(response_no, length),
-         weight = 1/n_results) %>%
-  select(-matches("ip_address|time|conf_level|choice_reason")) %>%
-  unnest(response_no) %>%
-  group_by(pic_id, response_no) %>%
-  summarize(weight = sum(weight)) %>%
-  complete(pic_id, response_no = 1:20, fill = list(weight = 0)) %>%
-  left_join(select(pic_data, test_param, obs_plot_location, pic_name, data_name) %>%
-              mutate(pic_id = 1:n())) %>%
-  filter(!is.na(response_no)) %>%
-  extract(obs_plot_location, into = c("cluster_target", "trend_target", "gini_target"),
-          regex = c("(\\d{1,}), ?(\\d{1,}), ?(\\d{1,})")) %>%
-  mutate_at(vars(cluster_target:gini_target), as.numeric) %>%
-  mutate(is_target = ((response_no == cluster_target) | (response_no == trend_target)),
-         null_no = factor(response_no*(!is_target)) %>% as.numeric %>% magrittr::subtract(1)) %>%
-  group_by(pic_id) %>%
-  mutate(null_n = sum((!is_target)*weight)) %>%
-  mutate(
-    set_number = str_extract(data_name, "set-(\\d{1,})") %>% str_remove("set-") %>% as.numeric,
-    set_type = str_remove(data_name, "set-\\d{1,}-"),
-    aes_type = str_remove(test_param, "turk16-"))
-
-t16_null_wide <- t16_res %>%
-  select(pic_id, set_number, set_type, aes_type, null_no, weight) %>%
-  group_by(pic_id, set_type, aes_type) %>%
-  filter(null_no > 0) %>%
-  mutate(n_total = sum(weight)) %>%
-  filter(n_total > 0) %>%
-  tidyr::spread(key = null_no, value = weight) %>%
-  ungroup()
-
-
-t16_null_alpha_plotwise <- t16_null_wide %>%
-  extract(set_type, into = c("k", "sdline", "sdgroup"),
-          regex = "k-([35])-sdline-([\\d\\.]{1,})-sdgroup-([\\d\\.]{1,})") %>%
-  mutate_at(vars(k, sdline, sdgroup), as.numeric) %>%
-  group_by(aes_type, set_number, k, sdline, sdgroup, pic_id, n_total) %>%
-  nest(`1`:`18`) %>%
-  mutate(alpha = purrr::map2_dbl(data, n_total,
-                                 function(x, y) alpha.ml(as.matrix(x), weight = y))) %>%
-  mutate(aes_type = factor(aes_type, levels = aes_order, ordered = T)) %>%
-  mutate(alpha_type = "null") %>%
-  group_by(k, sdline, sdgroup) %>%
-  mutate(set_min = min(set_number))
-
-t16_null_alpha_setwise <- t16_null_wide %>%
-  extract(set_type, into = c("k", "sdline", "sdgroup"),
-          regex = "k-([35])-sdline-([\\d\\.]{1,})-sdgroup-([\\d\\.]{1,})") %>%
-  mutate_at(vars(k, sdline, sdgroup), as.numeric) %>%
-  group_by(aes_type, k, sdline, sdgroup) %>%
-  nest() %>%
-  mutate(n = purrr::map(data, "n_total")) %>%
-  mutate(alpha = purrr::map2_dbl(data, n, function(x, y) alpha.ml(as.matrix(x), weight = y))) %>%
-  mutate(aes_type = factor(aes_type, levels = aes_order, ordered = T)) %>%
-  mutate(alpha_type = "null") %>%
-  mutate(n_total = purrr::map_dbl(n, sum)) %>%
-  group_by(k, sdline, sdgroup) %>%
-  mutate(set_min = min(purrr::map_dbl(data, ~min(.$set_number))),
-         set_max = max(purrr::map_dbl(data, ~max(.$set_number))))
-
-
-t16_null_alpha_aeswise <- t16_null_wide %>%
-  extract(set_type, into = c("k", "sdline", "sdgroup"),
-          regex = "k-([35])-sdline-([\\d\\.]{1,})-sdgroup-([\\d\\.]{1,})") %>%
-  mutate_at(vars(k, sdline, sdgroup), as.numeric) %>%
-  group_by(aes_type) %>%
-  nest() %>%
-  mutate(n = purrr::map(data, "n_total")) %>%
-  mutate(alpha = purrr::map2_dbl(data, n, function(x, y) alpha.ml(as.matrix(x), weight = y))) %>%
-  mutate(aes_type = factor(aes_type, levels = aes_order, ordered = T)) %>%
-  mutate(alpha_type = "null") %>%
-  mutate(n_total = purrr::map_dbl(n, sum))
-
-t16_all_wide <- t16_res %>%
-  select(pic_id, set_type, aes_type, response_no, weight) %>%
-  group_by(pic_id, set_type, aes_type) %>%
-  # filter(null_no > 0) %>%
-  mutate(n_total = sum(weight)) %>%
-  filter(n_total > 0) %>%
-  tidyr::spread(key = response_no, value = weight) %>%
-  ungroup()
-
+source("code/turk16_null_alpha.R")
 @
 
 
@@ -408,31 +290,16 @@ t16_all_wide <- t16_res %>%
 The null plot generation model used in \citet{vanderplas:2017} had a noticeable deficiency: the aesthetics used in the plots required clustering of the null plot data after data generation, and the cluster size was not well-controlled. As a result, some of the generated null plots contained ``clusters" consisting of only of one or two points, while other artificially imposed clusters were noticably diffuse or oddly shaped. In the case of clusters of one or two points, estimation of a 95\% bounding ellipse failed, providing an unintended feature which participants noticed, resulting in significant null plot identifications (\autoref{fig:featurehierarchy-null-model-sucks} shows two such images).
 
 <<featurehierarchy-null-model-sucks, fig.width = 12, fig.height = 6, fig.cap = "A two-target lineup from \\citet{vanderplas:2017}, plotted with different aesthetic combinations. The two targets are in plot 11+8 (clustering) and 2+2 (linear trend). In plots 10, 11, 15, and  17, the estimation of a bounding ellipse in a null plot failed due to insufficient points in the cluster. This deficiency is less apparent in the second lineup, which only has a regression line, as the aesthetics which emphasize grouping are not shown.", warning = F, message=F>>=
-plot_names <- c("plain","color", "shape", "colorShape", "colorEllipse", "colorShapeEllipse", "trend", "trendError", "colorTrend", "colorEllipseTrendError")
-fix_plot_names <- function(x) {
-  x %>%
-  str_replace("color", "Color + ") %>%
-  str_replace("[sS]hape", "Shape + ") %>%
-  str_replace("[tT]rend", "Trend + ") %>%
-  str_replace("Ellipse", "Ellipse + ") %>%
-  str_replace("Error", "Error + ") %>%
-  str_replace("plain", "Plain") %>%
-  str_replace("( \\+ )$", "") %>%
-  str_replace_all(c("Color" = "C", "Shape" = "S", "Ellipse" = "L", "Trend" = "T", "Error" = "E")) %>%
-  str_replace_all(" \\+ ", "+") %>%
-    factor(levels = c("T", "T+E", "Plain", "S", "C", "C+S", "C+L", "C+S+L", "C+T", "C+L+T+E"), ordered = T)
-}
+source("code/turk16_plots.R")
+turk16_lineup_dat <- read_csv("data/Turk16/Image_Data/set-46-k-5-sdline-0.45-sdgroup-0.25.csv")
 
-source("code/GenerateLineups.R")
-lineup_dat <- read_csv("data/Turk16/Image_Data/set-46-k-5-sdline-0.45-sdgroup-0.25.csv")
-
-lineup_alphas <- filter(t16_null_alpha_plotwise, set_number == 46, aes_type %in% c("trend", "colorShapeEllipse")) %>% arrange(aes_type)
+turk16_lineup_alphas <- filter(t16_null_alpha_plotwise, set_number == 46, aes_type %in% c("trend", "colorShapeEllipse")) %>% arrange(aes_type)
 
 gridExtra::grid.arrange(
-  suppressWarnings(gen.plot(lineup_dat, c("Color", "Shape"), c("Ellipses"))) +
+  suppressWarnings(gen.plot(turk16_lineup_dat, c("Color", "Shape"), c("Ellipses"))) +
     coord_fixed() + scale_x_continuous(limits = c(-3, 2.75)) + scale_y_continuous(limits = c(-3, 2.75)),
 
-  suppressWarnings(gen.plot(lineup_dat, NULL, "Reg. Line")) +
+  suppressWarnings(gen.plot(turk16_lineup_dat, NULL, "Reg. Line")) +
     coord_fixed() + scale_x_continuous(limits = c(-3, 2.75)) + scale_y_continuous(limits = c(-3, 2.75)),
   nrow = 1
 )
@@ -445,7 +312,7 @@ We can examine the $\hat\alpha$ estimates for each set of aesthetics to examine 
 With this design in mind, individual $\hat\alpha$ values were calculated from the null plot selection data for each lineup, to get a sense of the variability in the $\hat\alpha$ estimates. In some lineups, null plots were never selected; estimates have been excluded for these plots. \autoref{fig:all-null-alphas} shows the results by aesthetic for each lineup data set used in \citet{vanderplas:2017}.
 <<all-null-alphas, fig.cap = "Alpha estimates for each lineup image, with aggregate estimates for each parameter set and aesthetic combination. There are some differences between aesthetics in average $\\hat\\alpha$, but overall, most $\\alpha$ values are estimated to be around 0.7. The variability in $\\hat\\alpha$ increases with the value of $\\sigma_C$ and $\\sigma_T$, the trend and cluster variability parameters. Note that on the y-axis, aesthetics are indicated as follows: C = color, L = ellipse, S = shape, T = trend line, E = error band. $\\hat\\alpha$s tend to be more variable when color aesthetics are present - if only one null plot has an unequal group, $\\alpha$ will tend to be very small; if more than one null plots have unequal groups, $\\alpha$ tends to be larger. Pooled estimates of the 3 plots generated with the same parameters and displayed with the same aesthetics are shown with an 'x'.", fig.width = 8, fig.height = 6>>=
 
-t16_null_alpha_plotwise %>%
+plot_t16_alpha_df <- t16_null_alpha_plotwise %>%
   mutate(valtype = "Individual Plot") %>%
   bind_rows(
     mutate(t16_null_alpha_setwise, valtype = "Pooled")

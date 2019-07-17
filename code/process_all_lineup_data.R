@@ -2,106 +2,106 @@
 
 library(tidyverse)
 source(here::here("code/alpha_ml.R"))
-dir <- "~/Dropbox/GraphicsGroup/Lineups-nf/"
-
-pic_details <- tibble(pic_details_path = list.files(dir, pattern = "picture[\\._-]details.csv", recursive = T, full.names = T),
-                      study = str_extract(pic_details_path, "turk\\d{1,}")) %>%
-  group_by(study) %>%
-  arrange(nchar(pic_details_path)) %>%
-  filter(row_number() == 1)
-
-turk_data <- tibble(results_path = list.files(dir, pattern = "(data.turk\\d{1,})|(turk\\d{1,}.results)|(turk\\d{1,}.raw.results)|(turk\\d{1,}_raw_results)|(^turk\\d{1,}).csv", recursive = T, full.names = T),
-                    study = str_extract(results_path, "turk\\d{1,}")) %>%
-  group_by(study)
-
-
-fix_up_turk_results <- function(turkdata, picdata) {
-  if (!"pic_id" %in% names(picdata) & !"pic_name" %in% names(picdata)) {
-    if ("id" %in% names(picdata)) {
-      picdata <- rename(picdata, pic_id = id)
-    } else {
-      picdata <- mutate(picdata, pic_id = 1:n())
-    }
-  }
-
-  if ("pic_name" %in% names(picdata)) {
-    if (is.logical(picdata$pic_name)) {
-      picdata <- select(picdata, -pic_name)
-    }
-    picdata$pic_name <- str_remove(picdata$pic_name, "(images)?(svgs)?/")
-  }
-
-  if ("pic_name" %in% names(turkdata)) {
-    if (is.logical(turkdata$pic_name)) {
-      turkdata <- select(turkdata, -pic_name)
-    }
-    turkdata$pic_name <- str_remove(turkdata$pic_name, "(images)?(svgs)?/")
-  }
-
-  if ("plot_location" %in% names(turkdata)) {
-    turkdata$obs_plot_location <- turkdata$plot_location
-  }
-  if ("plot_location" %in% names(picdata)) {
-    picdata$obs_plot_location <- picdata$plot_location
-  }
-
-  picdata <- picdata %>%
-    select(one_of(c("pic_id", "obs_plot_location", "pic_name", "param_value", "test_param")))
-
-  if ("nick_name" %in% names(turkdata)) {
-    turkdata$nick_name <- purrr::map_chr(as.character(turkdata$nick_name), digest::digest)
-  } else if ("id" %in% names(turkdata)) {
-    turkdata$nick_name <- as.character(turkdata$id)
-  } else {
-    warning(paste0("nickname not found for ", unique(turkdata$experiment)))
-  }
-
-  turkdata <- turkdata %>%
-    select(one_of(c("nick_name", "pic_name", "pic_id", "response_no", "obs_plot_location", "test_param", "param_value")))
-
-  turkdata$response_weight <- 1
-  if (is.factor(turkdata$response_no) | is.character(turkdata$response_no)) {
-    turkdata$response_no <- purrr::map(turkdata$response_no, ~as.character(.) %>%
-                                         str_split(",") %>% unlist() %>% as.integer())
-    turkdata$response_weight <- purrr::map_dbl(turkdata$response_no, ~1/length(.))
-    turkdata$response_weight[is.na(turkdata$response_weight)] <- 1
-    turkdata <- unnest(turkdata)
-  }
-  turkdata$obs_plot_location <- as.character(turkdata$obs_plot_location)
-  picdata$obs_plot_location <- as.character(picdata$obs_plot_location)
-
-  # if (is.character(turkdata$obs_plot_location) | is.factor(turkdata$obs_plot_location)) {
-  #   turkdata$obs_plot_location <- purrr::map_int(turkdata$obs_plot_location,
-  #                                                ~as.character(.) %>% str_split(",") %>%
-  #                                                  unlist() %>% as.integer())
-  # }
-  if (is.list(turkdata$response_no)) turkdata <- unnest(turkdata)
-
-  full_join(turkdata, picdata)
-}
-fix_safely <- safely(fix_up_turk_results)
-
-studies <- inner_join(pic_details, turk_data, by = "study") %>%
-  mutate(pic_details = purrr::map(pic_details_path, read.csv),
-         turk_results = purrr::map(results_path, read.csv),
-         joined = purrr::map2(turk_results, pic_details, fix_safely)) %>%
-  mutate(targets = ifelse(study %in% c("turk16", "turk18"), 2, 1)) %>%
-  mutate(err = map(joined, "error"),
-         joined = map(joined, "result")) %>%
-  filter(purrr::map_lgl(err, is.null))
-
-study_details <- studies %>%
-  select(-pic_details, -pic_details_path, -results_path, -turk_results, -err) %>%
-  unnest() %>%
-  filter(!is.na(response_no) & !is.na(nick_name) & !is.na(test_param))
-
-studies_sum <- study_details %>%
-  group_by(study, param_value, test_param, pic_id, pic_name, obs_plot_location) %>%
-  count(response_no, wt = 1/response_weight) %>%
-  complete(nesting(study, param_value, test_param, pic_id, pic_name, obs_plot_location), response_no = 1:20, fill = list(n = 0)) %>%
-  ungroup()
-
-write_csv(studies_sum, "data/all-turk-studies-summary.csv")
+# dir <- "~/Dropbox/GraphicsGroup/Lineups-nf/"
+#
+# pic_details <- tibble(pic_details_path = list.files(dir, pattern = "picture[\\._-]details.csv", recursive = T, full.names = T),
+#                       study = str_extract(pic_details_path, "turk\\d{1,}")) %>%
+#   group_by(study) %>%
+#   arrange(nchar(pic_details_path)) %>%
+#   filter(row_number() == 1)
+#
+# turk_data <- tibble(results_path = list.files(dir, pattern = "(data.turk\\d{1,})|(turk\\d{1,}.results)|(turk\\d{1,}.raw.results)|(turk\\d{1,}_raw_results)|(^turk\\d{1,}).csv", recursive = T, full.names = T),
+#                     study = str_extract(results_path, "turk\\d{1,}")) %>%
+#   group_by(study)
+#
+#
+# fix_up_turk_results <- function(turkdata, picdata) {
+#   if (!"pic_id" %in% names(picdata) & !"pic_name" %in% names(picdata)) {
+#     if ("id" %in% names(picdata)) {
+#       picdata <- rename(picdata, pic_id = id)
+#     } else {
+#       picdata <- mutate(picdata, pic_id = 1:n())
+#     }
+#   }
+#
+#   if ("pic_name" %in% names(picdata)) {
+#     if (is.logical(picdata$pic_name)) {
+#       picdata <- select(picdata, -pic_name)
+#     }
+#     picdata$pic_name <- str_remove(picdata$pic_name, "(images)?(svgs)?/")
+#   }
+#
+#   if ("pic_name" %in% names(turkdata)) {
+#     if (is.logical(turkdata$pic_name)) {
+#       turkdata <- select(turkdata, -pic_name)
+#     }
+#     turkdata$pic_name <- str_remove(turkdata$pic_name, "(images)?(svgs)?/")
+#   }
+#
+#   if ("plot_location" %in% names(turkdata)) {
+#     turkdata$obs_plot_location <- turkdata$plot_location
+#   }
+#   if ("plot_location" %in% names(picdata)) {
+#     picdata$obs_plot_location <- picdata$plot_location
+#   }
+#
+#   picdata <- picdata %>%
+#     select(one_of(c("pic_id", "obs_plot_location", "pic_name", "param_value", "test_param")))
+#
+#   if ("nick_name" %in% names(turkdata)) {
+#     turkdata$nick_name <- purrr::map_chr(as.character(turkdata$nick_name), digest::digest)
+#   } else if ("id" %in% names(turkdata)) {
+#     turkdata$nick_name <- as.character(turkdata$id)
+#   } else {
+#     warning(paste0("nickname not found for ", unique(turkdata$experiment)))
+#   }
+#
+#   turkdata <- turkdata %>%
+#     select(one_of(c("nick_name", "pic_name", "pic_id", "response_no", "obs_plot_location", "test_param", "param_value")))
+#
+#   turkdata$response_weight <- 1
+#   if (is.factor(turkdata$response_no) | is.character(turkdata$response_no)) {
+#     turkdata$response_no <- purrr::map(turkdata$response_no, ~as.character(.) %>%
+#                                          str_split(",") %>% unlist() %>% as.integer())
+#     turkdata$response_weight <- purrr::map_dbl(turkdata$response_no, ~1/length(.))
+#     turkdata$response_weight[is.na(turkdata$response_weight)] <- 1
+#     turkdata <- unnest(turkdata)
+#   }
+#   turkdata$obs_plot_location <- as.character(turkdata$obs_plot_location)
+#   picdata$obs_plot_location <- as.character(picdata$obs_plot_location)
+#
+#   # if (is.character(turkdata$obs_plot_location) | is.factor(turkdata$obs_plot_location)) {
+#   #   turkdata$obs_plot_location <- purrr::map_int(turkdata$obs_plot_location,
+#   #                                                ~as.character(.) %>% str_split(",") %>%
+#   #                                                  unlist() %>% as.integer())
+#   # }
+#   if (is.list(turkdata$response_no)) turkdata <- unnest(turkdata)
+#
+#   full_join(turkdata, picdata)
+# }
+# fix_safely <- safely(fix_up_turk_results)
+#
+# studies <- inner_join(pic_details, turk_data, by = "study") %>%
+#   mutate(pic_details = purrr::map(pic_details_path, read.csv),
+#          turk_results = purrr::map(results_path, read.csv),
+#          joined = purrr::map2(turk_results, pic_details, fix_safely)) %>%
+#   mutate(targets = ifelse(study %in% c("turk16", "turk18"), 2, 1)) %>%
+#   mutate(err = map(joined, "error"),
+#          joined = map(joined, "result")) %>%
+#   filter(purrr::map_lgl(err, is.null))
+#
+# study_details <- studies %>%
+#   select(-pic_details, -pic_details_path, -results_path, -turk_results, -err) %>%
+#   unnest() %>%
+#   filter(!is.na(response_no) & !is.na(nick_name) & !is.na(test_param))
+#
+# studies_sum <- study_details %>%
+#   group_by(study, param_value, test_param, pic_id, pic_name, obs_plot_location) %>%
+#   count(response_no, wt = 1/response_weight) %>%
+#   complete(nesting(study, param_value, test_param, pic_id, pic_name, obs_plot_location), response_no = 1:20, fill = list(n = 0)) %>%
+#   ungroup()
+#
+# write_csv(studies_sum, "data/all-turk-studies-summary.csv")
 
 studies_sum <- read_csv("data/all-turk-studies-summary.csv")
 studies_alpha_est <- studies_sum %>%
