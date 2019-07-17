@@ -320,14 +320,32 @@ plot_t16_alpha_df <- t16_null_alpha_plotwise %>%
          siglab1 = paste("sigma[T] == ", round(sdline, 2)),
          siglab2 = paste("sigma[C] == ", round(sdgroup, 2)),
          aes_type = fix_plot_names(aes_type)) %>%
-ggplot(aes(x = alpha, y = aes_type, size = n_total)) +
+  ungroup() %>%
+  mutate(sig_int = interaction(sdline, sdgroup) %>% factor() %>% as.numeric()) %>%
+  group_by(k) %>%
+  mutate(y_val = (sig_int - 6)/9) %>%
+  ungroup()
+
+plot_t16_alpha_segs <- plot_t16_alpha_df %>%
+  group_by(aes_type, siglab1, siglab2, sig_int) %>%
+  summarize(minp = min(alpha), maxp = max(alpha), y_val = unique(y_val))
+
+ggplot() + coord_flip() +
   scale_size_continuous("# Null Evaluations", range = c(1, 4)) +
-  geom_point(aes(shape = valtype, alpha = valtype)) +
+  geom_segment(aes(x = y_val, xend = y_val, y = minp, yend = maxp),
+               data = plot_t16_alpha_segs,
+               alpha = .25) +
+  geom_point(aes(y = alpha, x = y_val, size = n_total,
+                 color = factor(k),
+                 shape = valtype),
+             data = plot_t16_alpha_df) +
   scale_shape_manual("Estimate Type", values = c("Individual Plot" = 1, "Pooled" = 4)) +
-  scale_alpha_manual("Estimate Type", values = c("Individual Plot" = .5, "Pooled" = 1)) +
+  scale_color_manual("# Clusters", values = c("3" = "purple", "5" = "orange")) +
   ylab("") +
-  scale_x_continuous(name = expression(alpha)) +
-  facet_grid(siglab1 ~klab + siglab2, labeller = label_parsed) +
+  scale_y_continuous(name = expression(alpha)) +
+  scale_x_continuous(breaks = NULL) +
+  # facet_grid(siglab1 ~., labeller = label_parsed) +
+  facet_grid(aes_type ~ .) +
   theme_bw() +
   theme(legend.position = "bottom", axis.title.y = element_blank())
 @
