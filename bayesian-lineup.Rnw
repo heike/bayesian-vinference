@@ -375,7 +375,7 @@ t13plot_data %>%
   geom_text(aes(x = Inf, y = -Inf, label = sprintf("BF == %.2f", bf)),
             vjust = -0.2, hjust = 1, parse = T, data = filter(counts_turk13, .sample_inner == 14), inherit.aes = F) +
   facet_wrap(~.sample_inner) +
-  theme(axis.text = element_blank(), axis.title = element_blank())
+  theme(axis.text = element_blank(), axis.title = element_blank(), axis.ticks = element_blank())
 @
 
 One advantage of the Bayes factor method is that it seamlessly incorporates multiple target plot selections: a participant who selects $p$ panels of a lineup would contribute $1/p$ votes to each panel's total. In the frequentist model, it is not quite as easy to incorporate fractional counts into a multinomial distribution.
@@ -387,7 +387,7 @@ ggplot(t6_plot_lineup_data, aes(x = group, y = vals)) +
   geom_point(aes(x = newx, y = newy, colour = factor(group)), shape = 1, size = 1) +
   scale_color_discrete(guide = F) +
   facet_wrap(~.sample, ncol = 5) +
-  theme(axis.title = element_blank(), axis.text = element_blank()) +
+  theme(axis.title = element_blank(), axis.text = element_blank(), axis.ticks = element_blank()) +
   xlab("") + scale_y_continuous(expand = c(0.1,0)) +
   geom_text(aes(x = -Inf, y = Inf, label = sprintf("c[%d] == %.0f", .sample, n)),
             hjust = -0.2, vjust = 1, parse = T, data = counts_turk6, inherit.aes = F) +
