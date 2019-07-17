@@ -226,7 +226,9 @@ The second derivative of the log likelihood function uses the trigamma function,
 \begin{align}
 \frac{d^2}{d\alpha^2}\ln \mathscr{L}(\alpha|\theta) &= nm_0^2\psi_1(\alpha m_0) - nm_0\psi_1(\alpha)\\
 & = nm_0^2\left(\sum_{x=0}^\infty \frac{1}{(\alpha m_0 + x)^2} - \sum_{x=0}^\infty \frac{1}{m_0(\alpha + x)^2}\right)\nonumber\\
-& = nm_0^2\sum_{x=0}^\infty \left(\frac{1}{(\alpha m_0 + x)^2} - \frac{1}{m_0(\alpha + x)^2}\right) \leq 0 \text{ for } m \geq 1, \alpha > 0 \nonumber
+& = nm_0^2\sum_{x=0}^\infty \left(\frac{1}{(\alpha m_0 + x)^2} - \frac{1}{m_0(\alpha + x)^2}\right) \nonumber\\
+& = nm_0^2\sum_{x=0}^\infty \frac{m_0(\alpha + x)^2 - (m_0\alpha + x)^2}{m_0(\alpha m_0 + 1)^2(\alpha + x)^2}\leq 0 \text{ for } m_0 \geq 1, \alpha > 0 \nonumber\\
+& \hphantom{=} \text{ as } m_0(\alpha+x)^2 \leq (\alpha m_0 + x)^2 \text{ for } m_0 \geq 1, \alpha > 0\nonumber
 \end{align}
 The empirical solution to \autoref{eqn:mle} is thus a local maximum.
 
