@@ -138,9 +138,11 @@ where $C$ is the number of data panel detections and $K$ is the number of indepe
 
 We will first consider the general case of constructing a Bayes Factor for an entire lineup (e.g. all 20 panels), and then we will consider the marginal Bayes factor which is more comparable to the approaches in \citet{majumder2013validation} and \autoref{eqn:sim-pmf}.
 
-\subsubsection{Marginal Bayes Factors for Target Plots}
-
 \subsubsection{Full Lineup Bayes Factors}
+Bayes factors are somewhat analogous to frequentist hypothesis tests \todo{cite}, but to construct a Bayes factor for a lineup, we need two models to compare.
+In order to construct a Bayes Factor which would be roughly equivalent to the standard lineup evaluation, we would compare two models with different hyperparameters: the model structure is the same, but in the first model, we would expect one or two of the panels to be selected more frequently; in the second, we would expect all panels to be selected approximately equally.
+
+\subsubsection{Marginal Bayes Factors for Target Plots}
 
 \subsubsection{Caveats}
 
