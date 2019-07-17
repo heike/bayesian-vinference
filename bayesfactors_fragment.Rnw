@@ -48,8 +48,6 @@
 
 
 \section{Bayes Factors vs. P-values}
-In the standard analysis of a lineup plot, with $C$ data detections in $K$ independent evaluations, a visual p-value is calculated using the mass function $$P(C\geq x) = \sum_{x = C}^{K} \binom{K}{x} \frac{1}{B(\alpha, (m-1)\alpha)}\cdot B(x+\alpha, K-x+(m-1)\alpha)$$
-This value has been computed in the past by simulation (assuming $\alpha=1$), but the more general solution is useful to consider in this context. The visual p-value is then compared to a threshold of 0.05, and if it is smaller, we reject the hypothesis that every plot is equally likely to be selected.
 
 Bayes factors are somewhat analogous to the frequentist hypothesis test, but to construct a bayes factor for a lineup, we would want to consider the marginal distribution consisting of the number of data detections and the number of null detections, as the primary factor in lineup evaluation is whether the data plot can be detected from among the collective set of null plots. The marginal beta-binomial model considers the data detections and the aggregated null-plot detections; as a result, the parameters of the posterior beta distribution are $C + \alpha, K - C + (m-1)\alpha$.
 

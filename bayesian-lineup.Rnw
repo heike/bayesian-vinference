@@ -116,7 +116,7 @@ p(\bm\theta | \bm{c}, \bm{\alpha}) & \sim Dirichlet(\bm{c} + \bm{\alpha})
 
 where $Multinomial(\bm\theta, K)$ is defined as in \autoref{eqn:multinomial-pmf} and $Dirichlet(\bm\alpha)$ is defined as in \autoref{eqn:dirichlet-pdf}.
 
-Typically, when evaluating lineups, we compare the number of target plot identifications with the aggregate number of null plot identifications (see \citet{majumder2013validation}). This is equivalent to the marginal distribution of $c_t$, where $t \in 1, ..., m$ is the index of the target panel in the lineup. The equivalent Bayesian version takes the form of a Beta-Binomial model. The frequentist model used in \citet{majumder2013validation} assumes $\theta_t = 1/m$, that is, $\theta_t$ is fixed and equal to the selection probability of every other panel in the lineup.
+Typically, when evaluating lineups, we compare the number of target plot identifications with the aggregate number of null plot identifications (see \citet{majumder2013validation}). This is equivalent to the marginal distribution of $c_t$, where $t \in 1, ..., m$ is the index of the target panel in the lineup. The equivalent Bayesian version takes the form of a Beta-Binomial model.
 
 \begin{align}\begin{split}\label{eqn:marginal-model-specification}
 \alpha &= \text{concentration hyperparameter}\\
@@ -129,6 +129,15 @@ p(\theta_t | \bm{c_t}, \alpha) & \sim Beta(c_t + \alpha, K - c_t + (m-1)\alpha)
 
 From this formulation, we can construct a Bayesian analogue of the frequentist p-value proposed in \citet{majumder2013validation} using Bayes factors.
 \subsection{Bayes Factors for Lineups}
+
+The frequentist model used in \citet{majumder2013validation} assumes $\theta_t = 1/m$, that is, $\theta_t$ is fixed and equal to the selection probability of every other panel in the lineup. This assumption is unreasonable, so in more recent analyses of lineups, visual p-values for lineups have been calculated using the mass function
+\begin{align}
+P(C\geq x) = \sum_{x = C}^{K} \binom{K}{x} \frac{1}{B(\alpha, (m-1)\alpha)}\cdot B(x+\alpha, K-x+(m-1)\alpha)\label{eqn:sim-pmf}
+\end{align}
+where $C$ is the number of data panel detections and $K$ is the number of independent evaluations of the lineup. This value has been computed in the past by simulation, assuming $\alpha=1$, but the more general solution is useful to consider in this context. The visual p-value is then compared to a threshold of 0.05, and if it is smaller, we reject the hypothesis that every plot is equally likely to be selected.
+
+We will first consider the general case of constructing a Bayes Factor for an entire lineup (e.g. all 20 panels), and then we will consider the marginal Bayes factor which is more comparable to the approaches in \citet{majumder2013validation} and \autoref{eqn:sim-pmf}.
+
 \subsubsection{Marginal Bayes Factors for Target Plots}
 
 \subsubsection{Full Lineup Bayes Factors}
