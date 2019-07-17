@@ -308,7 +308,7 @@ t13plot_data %>%
   theme(axis.text = element_blank(), axis.title = element_blank())
 @
 
-One advantage of the Bayes factor method for single-target lineup analysis is that it seamlessly incorporates multiple target plot selections: a participant who selects $p$ panels of a lineup would contribute $1/p$ votes to each panel's total. In the frequentist model, it is not quite as easy to estimate fractional counts in a multinomial distribution.
+One advantage of the Bayes factor method is that it seamlessly incorporates multiple target plot selections: a participant who selects $p$ panels of a lineup would contribute $1/p$ votes to each panel's total. In the frequentist model, it is not quite as easy to estimate fractional counts in a multinomial-Dirichlet distribution.
 
 
 \autoref{fig:bayes-factors-alphas} shows Bayes Factors in the marginal case for combinations of $\alpha_1, \alpha_2$ over several different $C$ values, assuming a total of $K=20$ independent evaluations.
