@@ -85,8 +85,106 @@ knitr::opts_chunk$set(echo = F, message = F)
 # theme_set(theme_bw())
 @
 
+<<bf-code, include = F>>=
+mvbeta <- function(alpha, log = F) {
+  z <- sum(lgamma(alpha)) - lgamma(sum(alpha))
+  if (!log) return(exp(z)) else return(z)
+}
+
+bf <- function(a1, a2, m = 20, c, k = sum(c)) {
+  stopifnot(a1 > 0, a2 > 0, c <= k, m > 1)
+
+  beta(a2, (m - 1)*a2) * beta(c + a1, k - c + (m - 1)*a1) /
+    (beta(a1, (m - 1)*a1) * beta(c + a2, k - c + (m - 1)*a2))
+}
+bf_vec <- function(a1, a2, m = 20, c, k = sum(c)) {
+  stopifnot(a1 > 0, a2 > 0, c <= k, m > 1)
+
+ exp(mvbeta(rep(a2, length(c)), log = T) + mvbeta(a1 + c, log = T) -
+   mvbeta(rep(a1, length(c)), log = T) - mvbeta(a2 + c, log = T))
+}
+vis_p_value <- function(C, K, alpha = 1, m = 20){
+  single_p <- function(cc, kk, aa, mm) {
+    x <- cc:kk
+    sum(exp(lchoose(kk, x) - lbeta(aa, (mm - 1) * aa) + lbeta(x + aa, kk - x + (mm - 1) * aa)))
+  }
+
+  df <- tibble(cc = C,
+               kk = K,
+               aa = alpha,
+               mm = m) %>%
+    unnest() %>%
+    mutate(p = purrr::pmap_dbl(., single_p))
+  df$p
+}
+vis_p_value_orig <- function(C, K, m = 20){
+  single_p <- function(cc, kk, aa, mm) {
+    x <- cc:kk
+    sum(exp(lchoose(kk, x) - x*log(mm) + (kk-x)*log(1-1/mm)))
+  }
+
+  df <- tibble(cc = C,
+               kk = K,
+               mm = m) %>%
+    unnest() %>%
+    mutate(p = purrr::pmap_dbl(., single_p))
+  df$p
+}
+@
+
+<<turk-studies-data,  include = F>>=
+source("code/process_all_lineup_data.R")
+@
+
+<<lineup-bf-data-setup, cache = F, include = F, warning = F>>=
+t13plot_data <- read_csv("data/Turk13/lineups/data/data-1-1-1-20-2-14-5.csv")
+
+counts_turk13 <- studies_sum %>%
+  ungroup() %>%
+  filter(study == "turk13" & pic_id <=2) %>%
+  group_by(study, response_no) %>%
+  summarize(n = sum(n))%>%
+  mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
+  mutate(.sample_inner = response_no)
+
+counts_turk6 <- studies_sum %>%
+  ungroup() %>%
+  filter(study == "turk6" & pic_id == 1047) %>%
+  group_by(study, response_no) %>%
+  summarize(n = sum(n))%>%
+  mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
+  mutate(.sample = response_no)
+
+counts_turk6_ambig <- studies_sum %>%
+  ungroup() %>%
+  filter(study == "turk6" & pic_id == 995) %>%
+  group_by(study, response_no) %>%
+  summarize(n = sum(n))%>%
+  mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
+  mutate(.sample = response_no)
+
+t6plot_data <- read_csv("data/Turk6/turk6_n100_96_1_4.csv")
+library(beeswarm)
+
+t6_plot_lineup_data <- t6plot_data %>%
+		  split(.$.sample) %>%
+		  purrr::map2_dfr(., (1:length(.)) == 1, function(x, y) {
+		    if (y) {
+		      dev.new(width = 8, height = 8)
+		      beeswarm(formula = vals~group, data = x, add = F, do.plot = T, method = "swarm", cex = 2.5)
+		    }
+		    bs <- beeswarm(formula = vals~group, data = x, add = F, do.plot = F, method = "swarm", cex = 2.5)
+		    data.frame(vals = bs$y.orig, group = bs$x.orig, newy = bs$y,
+		               newx = bs$x, .sample = x$.sample[1])
+		  })
+dev.off()
+
+t6_ambig_data <- read_csv("data/Turk6/turk6_60_96_1_8.csv")
+
+@
+
 \section{A Bayesian's Statistical Lineup}
-While visual inference was initially developed to mimic frequentist hypothesis tests with the standard threshold of $p = 0.05$, the method itself does not require adherence to frequentist methods. In this section, we show one possible Bayesian framework for visual inference, using a Dirichlet-multinomial distribution to represent the probabilities of selecting each subplot and the observed participant selections.
+While visual inference was initially developed to mimic frequentist hypothesis tests with the standard threshold of $p = 0.05$, the method itself does not require adherence to frequentist methods. In this section, we show one possible framework for visual inference, using a Dirichlet-multinomial distribution to model the probabilities of selecting each panel and a Multinomial distribution to model the observed participant selections. This framework can be thought of in the Bayesian sense, where we put a Dirichlet prior on the multinomial selection probabilities, or in the Frequentist sense as an overdispersed multinomial model.
 
 \subsection{Lineup Model Specification}
 We will begin with a generic $m$-panel lineup, with selection probabilities $\theta_i, i = 1, ..., m$ where $\sum_{i=1}^m \theta_i = 1$, that is, the participant will select one (and only one) panel from the lineup as the most different. Our lineup has been evaluated by $K$ individuals, with $c_i, i = 1, ..., m$ the selection count for each panel, and $K = \sum_{i=1}^m c_i$.
@@ -116,7 +214,7 @@ p(\bm\theta | \bm{c}, \bm{\alpha}) & \sim Dirichlet(\bm{c} + \bm{\alpha})
 
 where $Multinomial(\bm\theta, K)$ is defined as in \autoref{eqn:multinomial-pmf} and $Dirichlet(\bm\alpha)$ is defined as in \autoref{eqn:dirichlet-pdf}.
 
-Typically, when evaluating lineups, we compare the number of target plot identifications with the aggregate number of null plot identifications (see \citet{majumder2013validation}). This is equivalent to the marginal distribution of $c_t$, where $t \in 1, ..., m$ is the index of the target panel in the lineup. The equivalent Bayesian version takes the form of a Beta-Binomial model.
+Typically, when evaluating lineups, we compare the number of target plot identifications with the aggregate number of null plot identifications (see \citet{majumder2013validation}). This is equivalent to the marginal distribution of $c_t$, where $t \in 1, ..., m$ is the index of the target panel in the lineup; that is, in \citet{majumder2013validation}, a binomial distribution, and in this formulation, a beta-binomial distribution.
 
 \begin{align}\begin{split}\label{eqn:marginal-model-specification}
 \alpha &= \text{concentration hyperparameter}\\
@@ -127,14 +225,13 @@ f(c_t | \theta_t) & \sim Binomial(\theta_t, K)\\
 p(\theta_t | \bm{c_t}, \alpha) & \sim Beta(c_t + \alpha, K - c_t + (m-1)\alpha)
 \end{split}\end{align}
 
-From this formulation, we can construct a Bayesian analogue of the frequentist p-value proposed in \citet{majumder2013validation} using Bayes factors.
-
+One application of this framework is in the construction of a Bayesian analogue of the frequentist p-value proposed in \citet{majumder2013validation} using Bayes factors. We explore this application in section \ref{sec:bayesfactor}.
 
 In conjunction with the Multinomial data model and a symmetric Dirichlet prior, $\alpha$ provides the equivalent of pseudo-observations for each plot; that is, the effect of $\alpha$ is equivalent to adding $\alpha$ observations to each panel in the lineup. When $\alpha$ is small, these pseudo-observations have relatively little influence, but when $\alpha$ is large, the pseudo-observations can quickly dwarf any information provided by the data. This is particularly true for the marginal Beta-Binomial model, where the equivalent of $(m-1)\alpha$ pseudo-observations are added. In most lineup studies, a plot might be evaluated between 10 and 30 times; with a $m=20$ lineup, even $\alpha = 1$ can easily dominate the participant selection data.
 
-In addition to the pseudo-observation interpretation, $\alpha$ provides information about the number of panels in a lineup which are likely to attract participant interest. It is useful to detour slightly from our Bayesian analysis of lineups to understand the impact of the value of $\alpha$ in the context of statistical lineups.
+In addition to the pseudo-observation interpretation, $\alpha$ provides information about the number of panels in a lineup which are likely to attract participant interest. It is useful to detour slightly from the derivation of a Bayesian analysis of lineups to understand the impact of the value of $\alpha$ in this model.
 
-\subsection{Dirichlet Hyperparameter}
+\subsection{Dirichlet Hyperparameter}\label{sec:alpha}
 
 % Stolen from heike/lineup-scenarios
 When $\alpha = 1$ the symmetric Dirichlet distribution is uniform on the $m-1$ dimensional simplex. When $\alpha < 1$ the mass of the distribution is along the edges of the simplex, where most values of $\theta_i$ will be close to 0. When $\alpha>1$, the mass of the distribution is in the center of the simplex, with most of the $\theta_i$ having similar values. \autoref{fig:simplex} shows ternary plots of values simulated from a 3-dimensional Dirichlet distribution which illustrate this effect.
@@ -159,7 +256,7 @@ theme_set(theme_bw())
 
 While graphical illustrations of the 20-dimensional dirichlet distribution are more difficult, we can use prior predictive simulations to assess the meaning of $\alpha$ as it relates to how many panels in a lineup attract participant attention. \autoref{fig:prior-predictive} shows simulated $c_i$ counts (sorted for visual clarity) for several values of $\alpha$; it is evident that for $\alpha<0.05$ only one panel of the lineup receives significant attention, while for $\alpha> .25$, participant attention is divided among several interesting panels of the lineup.
 
-<<prior-predictive, echo = F, fig.cap = "Prior predictive distribution of number of participant selections of panels (sorted by frequency) for different values of $\\alpha$, with $K=20$ plot evaluations. Low values of $\\alpha$ have fewer plots with any participant selections, while higher values of $\\alpha$ have more plots with participant selections.", fig.width = 8, fig.height = 4, out.width = "\\textwidth" >>=
+<<prior-predictive, echo = F, fig.cap = "Prior predictive distribution of number of participant selections of panels $c_i$ (sorted by frequency) for different values of $\\alpha$, with fixed $K=20$ plot evaluations. Low values of $\\alpha$ have fewer plots with any participant selections, while higher values of $\\alpha$ have more plots with participant selections.", fig.width = 8, fig.height = 4, out.width = "\\textwidth" >>=
 sim_lineup_model <- function(alpha, m = 20, k = 20, N = 50) {
   theta <- gtools::rdirichlet(1, rep(alpha, m))
   sels <- rmultinom(N, size = k, prob = theta)
@@ -192,16 +289,16 @@ ggplot(prior_pred) +
 
 % A modification of the frequentist paradigm developed in \citet{majumder2013validation} and released as a technical report \todo{get citation!} simulates p-values from a Dirichlet-Multinomial distribution with $\alpha=1$; based on the prior predictive distributions alone, $\alpha=1$ does not appear to fit the observed data or theoretical process (e.g. the tendency to identify even small differences from among similar things) well.
 
-The frequentist model used in \citet{majumder2013validation} assumes $\theta_t = 1/m$, that is, $\theta_t$ is fixed and equal to the selection probability of every other panel in the lineup. This assumption, which would correspond to an extremely large $\alpha$, is unreasonable, so in more recent analyses of lineups, visual p-values for lineups have been calculated using the mass function
+The data model used in \citet{majumder2013validation} assumes $\theta_t = 1/m$, that is, $\theta_t$ is fixed and equal to the selection probability of every other panel in the lineup. This assumption, which would correspond to infinite $\alpha$, is not credible. When examining a lineup, we are generally drawn immediately to 1-4 panels, and the remaining evaluation is to decide between those panels; we also know that typically the same panels are selected across multiple individuals. To account for this issue, more recent analyses of lineups \todo{cite heike/vinference package} calculate visual p-values using the mass function
 \begin{align}
 P(C\geq x) = \sum_{x = C}^{K} \binom{K}{x} \frac{1}{B(\alpha, (m-1)\alpha)}\cdot B(x+\alpha, K-x+(m-1)\alpha)\label{eqn:sim-pmf}
 \end{align}
-where $C$ is the number of data panel detections and $K$ is the number of independent evaluations of the lineup. This equation has been used to calculate visual p-values by simulation, assuming $\alpha=1$, but the more general solution is useful to consider in this context. The calculated visual p-value is then compared to a threshold of 0.05, and if it is smaller, we reject the hypothesis that every plot is equally likely to be selected.
+where $C$ is the number of data panel detections and $K$ is the number of independent evaluations of the lineup. This equation has been used to calculate visual p-values by simulation, assuming $\alpha=1$, but the more general solution is useful to consider, as the selection of $\alpha=1$ is somewhat arbitrary and corresponds to a uniform distribution of $\theta$ over the $(m--1)$ simplex. The calculated visual p-value is then compared to a threshold of 0.05, and if it is smaller, we reject the hypothesis that every plot is equally likely to be selected.
 
+Now that we have some intuition for the effect of the value of $\alpha$, we can proceed with deriving a Bayes Factor for visual inference analysis.
 
 \subsection{Bayes Factors for Lineups}
-Bayes factors are somewhat analogous to frequentist hypothesis tests \todo{cite}, but to construct a Bayes factor for a lineup, we need two models to compare.
-In order to construct a Bayes Factor which would be roughly equivalent to the standard lineup evaluation, we would compare two models with different hyperparameters: the model structure is the same, but in the first model, we would expect one or two of the panels to be selected more frequently (corresponding to a low value of $\alpha$); in the second, we would expect all panels to be selected approximately equally (corresponding to a high value of $\alpha$).
+Bayes factors are somewhat analogous to frequentist hypothesis tests \todo{cite}, but to construct a Bayes factor for a lineup, we need two models to compare. The structure of the model formulated in \autoref{eqn:full-model-specification} models the process of lineup evaluation well; we do not want to find an alternative model structure to compare it with. Instead, we will compare two models with different hyperparameters: the model structure is the same, but in the first model, we would expect one or two of the panels to be selected more frequently (corresponding to a low value of $\alpha$); in the second, we would expect all panels to be selected approximately equally (corresponding to a high value of $\alpha$).
 
 \begin{description}
 \item[M1] $\alpha < 1$ - a small value of $\alpha$, indicating that one or two of the plots might tend to be selected more frequently.
@@ -210,11 +307,11 @@ In order to construct a Bayes Factor which would be roughly equivalent to the st
 
 \autoref{fig:prior-predictive} shows the sorted panel selection counts for several values of $\alpha$; note that even at $\alpha=1000$, all plots are not selected equally (the equivalent of the null hypothesis in the visual p-value calculation in \citet{majumder:2013}).
 
-We will first consider the general case of constructing a Bayes Factor for an entire lineup (e.g. all 20 panels), and then we will consider the marginal Bayes factor which is more comparable to the approaches in \citet{majumder2013validation} and \autoref{eqn:sim-pmf}.
+As with the direct p-value calculation, we will first consider the construction of a Bayes Factor for an entire lineup (e.g. all 20 panels), and then we will consider the marginal Bayes factor which is more comparable to the approach used to assess lineups in previous studies \citep{majumder2013validation} (see  \autoref{eqn:sim-pmf}).
 
 \subsubsection{Full Lineup Bayes Factors}
 
-A full lineup Bayes factor would test the selection probabilities of the entire set of $m$ panels as a single unit, with no differentiation based on whether the panel shows null or target data. Rather, the multidimensional Bayes Factor for a lineup tests whether one or more panels are more likely to be selected (compared to a model where all panels are equally likely to be selected); it does not indicate which panel(s) are more likely.
+A full lineup Bayes factor would test the selection probabilities of the entire set of $m$ panels as a single unit, with no differentiation based on whether the panel shows null or target data. The multidimensional Bayes Factor for a lineup tests whether one or more panels are more likely to be selected (compared to a model where all panels are equally likely to be selected); it does not indicate which panel(s) are more likely. As such, it is of somewhat limited utility in the analyses of lineups which have been conducted to date, but is provided here to support the later calculation of a marginal Bayes factor which is analogous to the visual p-value calculation.
 
 Let $\alpha_{M_1} < 1$ be the prior concentration hyperparameter for model 1, and $\alpha_{M_2} \geq 1$ be the prior concentration hyperparamer for model 2. If we assume that both models are equally likely a priori, then the prior model odds cancel, and we can derive the bayes factor comparing model 1 to model 2 for an entire lineup as:
 
@@ -253,70 +350,13 @@ BF(M_1, M_2)_i  =& \frac{\displaystyle\int_\theta p(\theta | \alpha_{M_1}) f(K, 
 \frac{B(c_i + \alpha_{M_1}, K - c_i + (m-1)\alpha_{M_1})}{B(c_i + \alpha_{M_2}, K - c_i + (m-1)\alpha_{M_2})}
 \end{align}
 
-The marginal beta-binomial model considers the data detections and the aggregated null-plot detections; as a result, the parameters of the posterior beta distribution are $C + \alpha, K - C + (m-1)\alpha$. $\alpha$ can be thought of as providing pseudo-observations for each plot; that is, the effect of $\alpha$ is equivalent to adding $\alpha$ observations to each panel in the lineup. When $\alpha$ is small, these pseudo-observations have relatively little influence, but when $\alpha$ is large, the pseudo-observations can quickly dwarf any information provided by the data. This is particularly true for the marginal Beta-Binomial model, where the equivalent of $(m-1)\alpha$ pseudo-observations are added to the null observation aggregate count. In most lineup studies, a plot might be evaluated between 10 and 30 times; with a $m=20$ lineup, even $\alpha = 1$ can easily dominate the participant selection data.
+A similar derivation replacing $m-1$ with $m_0$, the number of null plots in the lineup, could be used to analyze modifications of the single-target lineup design, such as the study in \citet{vanderplas:2017}.
 
-<<bf-code, include = F>>=
-mvbeta <- function(alpha, log = F) {
-  z <- sum(lgamma(alpha)) - lgamma(sum(alpha))
-  if (!log) return(exp(z)) else return(z)
-}
+The marginal beta-binomial model considers the data detections and the aggregated null-plot detections; as a result, the parameters of the posterior beta distribution are $C + \alpha, K - C + (m-1)\alpha$. As discussed in \autoref{sec:alpha}, $\alpha$ can be thought of as providing pseudo-observations for each plot; that is, the effect of $\alpha$ is equivalent to adding $\alpha$ observations to each panel in the lineup.
 
-bf <- function(a1, a2, m = 20, c, k = sum(c)) {
-  stopifnot(a1 > 0, a2 > 0, c <= k, m > 1)
+\subsubsection{Selection of $\alpha_{M_1}$ and $\alpha_{M_2}$}
 
-  beta(a2, (m - 1)*a2) * beta(c + a1, k - c + (m - 1)*a1) /
-    (beta(a1, (m - 1)*a1) * beta(c + a2, k - c + (m - 1)*a2))
-}
-bf_vec <- function(a1, a2, m = 20, c, k = sum(c)) {
-  stopifnot(a1 > 0, a2 > 0, c <= k, m > 1)
-
- exp(mvbeta(rep(a2, length(c)), log = T) + mvbeta(a1 + c, log = T) -
-   mvbeta(rep(a1, length(c)), log = T) - mvbeta(a2 + c, log = T))
-}
-@
-
-<<turk-studies-data,  include = F>>=
-source("code/process_all_lineup_data.R")
-@
-
-<<lineup-bf-data-setup, cache = F, include = F, warning = F>>=
-t13plot_data <- read_csv("data/Turk13/lineups/data/data-1-1-1-20-2-14-5.csv")
-
-counts_turk13 <- studies_sum %>%
-  ungroup() %>%
-  filter(study == "turk13" & pic_id <=2) %>%
-  group_by(study, response_no) %>%
-  summarize(n = sum(n))%>%
-  mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
-  mutate(.sample_inner = response_no)
-
-counts_turk6 <- studies_sum %>%
-  ungroup() %>%
-  filter(study == "turk6" & pic_id == 1047) %>%
-  group_by(study, response_no) %>%
-  summarize(n = sum(n))%>%
-  mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
-  mutate(.sample = response_no)
-
-t6plot_data <- read_csv("data/Turk6/turk6_n100_96_1_4.csv")
-library(beeswarm)
-
-t6_plot_lineup_data <- t6plot_data %>%
-		  split(.$.sample) %>%
-		  purrr::map2_dfr(., (1:length(.)) == 1, function(x, y) {
-		    if (y) {
-		      dev.new(width = 8, height = 8)
-		      beeswarm(formula = vals~group, data = x, add = F, do.plot = T, method = "swarm", cex = 2.5)
-		    }
-		    bs <- beeswarm(formula = vals~group, data = x, add = F, do.plot = F, method = "swarm", cex = 2.5)
-		    data.frame(vals = bs$y.orig, group = bs$x.orig, newy = bs$y,
-		               newx = bs$x, .sample = x$.sample[1])
-		  })
-dev.off()
-
-
-
-@
+The marginal and full Bayes factors derived above depend on parameters $\alpha_{M_1}$ and $\alpha_{M_2}$, where in our formulation $\alpha_{M_1} < \alpha_{M_2}$. We could choose values of $\alpha_{M_{1,2}}$ based on the prior predictive distributions shown in \autoref{fig:prior-predictive}, but it is also useful to assess the effect of different combinations of $\alpha_{M_{1,2}}$ on the resulting Bayes Factor.
 
 
 \autoref{fig:bayes-factors-alphas} shows Bayes Factors in the marginal case for combinations of $\alpha_1, \alpha_2$ over several different $C$ values, assuming a total of $K=20$ independent evaluations.
@@ -362,7 +402,7 @@ p02 <- tidyr::crossing(a2 = seq(1.5, 20, by = 0.1),
 gridExtra::grid.arrange(p01, p02, nrow = 1, widths = c(.425, .575))
 @
 
-Clearly, the choice of $\alpha_1$ and $\alpha_2$ is important, but in order to get a feel for how the Bayes factor approach might compare to the visual p-value approach, let us set $\alpha_1 = 0.5$ and $\alpha_2 = 2$, which would correspond to relatively weak hyperparameters for both models, and examine the results from two lineups. The first of these examples, shown in \autoref{fig:turk13-lineup}, is from \citet{loyAreYouNormal2015}, a study which compared different q-q plots. We can see that there is no significant support for the choice of model 1 over model 2, or vice versa, when considering the target panel selections compared to the aggregate null panel selections. The target panel, which is in panel 14, had relatively few selections, resulting in a marginal Bayes Factor of 1.03. The full-model Bayes Factor of \Sexpr{bf_vec(1/2, 2, c = counts_turk13$n)} indicates that there is some evidence that all plots are not equally likely to be selected, primarily due to the multiple selections of a null plot in panel 4. The marginal Bayes Factor for panel 4 is \Sexpr{bf(1/2, 2, c = counts_turk13$n)[4]}, which would correspond to weak support for $M_1$ over $M_2$ if panel 4 had been contained the data.
+Clearly, the choice of $\alpha_1$ and $\alpha_2$ is important, but in order to get a feel for how the Bayes factor approach might compare to the visual p-value approach, let us set $\alpha_1 = 0.5$ and $\alpha_2 = 2$, which would correspond to relatively weak hyperparameters for both models, and examine the results from two lineups. The first of these examples, shown in \autoref{fig:turk13-lineup}, is from \citet{loyAreYouNormal2015}, a study which compared different q-q plots. We can see that there is no significant support for the choice of model 1 over model 2, or vice versa, when considering the target panel selections compared to the aggregate null panel selections. The target panel, which is in panel 14, had relatively few selections, resulting in a marginal Bayes Factor of 1.03. The full-model Bayes Factor of \Sexpr{bf_vec(1/2, 2, c = counts_turk13$n)} indicates that there is some evidence that all plots are not equally likely to be selected, primarily due to the multiple selections of a null plot in panel 4. The marginal Bayes Factor for panel 4 is \Sexpr{bf(1/2, 2, c = counts_turk13$n)[4]}, which would correspond to weak support for $M_1$ over $M_2$ if panel 4 had been contained the data. The corresponding visual p-value for this plot calculated as in \citet{majumder2013validation} is \Sexpr{sprintf("%0.4g", vis_p_value_orig(counts_turk13$n, sum(counts_turk13$n))[14])} and the modified p-value with $\alpha = 1$ is \Sexpr{sprintf("%0.4g", vis_p_value(counts_turk13$n, sum(counts_turk13$n))[14])}. In this example, the conclusion would be the same for frequentist and Bayesian tests of the hypothesis that every plot is approximately likely to be selected.
 
 <<turk13-lineup, fig.cap = sprintf("A lineup from \\citet{loyAreYouNormal2015} which was evaluated a total of %d times. Number of selections $c_i$ are shown at the top left of each panel; the calculated Bayes Factors with $\\alpha_1 = 0.5$ and $\\alpha_2 = 2$ is shown at the bottom right of the target panel (panel 14). As panel 4 was selected more frequently than panel 14, there is no significant information in favor of model 1 (the target plot is more likely to be selected than the nulls) over model 2. The multidimensional (whole plot) bayes factor with the same $\\alpha_1,\\alpha_2$ values is %.2f, indicating that there is weak to moderate evidence that all plots are not equally likely to be selected; that is, that model 1 better aligns with the observed data than model 2. Note that this evidence support is primarily due to the multiple selections of panel 4, which shows data generated by the null data model.", sum(counts_turk13$n), bf_vec(1/2, 2, c = counts_turk13$n)), fig.width = 6, fig.height = 6/5*4.5, fig.align='center'>>=
 t13plot_data %>%
@@ -379,7 +419,7 @@ t13plot_data %>%
 @
 
 One advantage of the Bayes factor method is that it seamlessly incorporates multiple target plot selections: a participant who selects $p$ panels of a lineup would contribute $1/p$ votes to each panel's total. In the frequentist model, it is not quite as easy to incorporate fractional counts into a multinomial distribution.
-\todo{add calculated p-values in here!}
+
 Participants selected the data plot in \autoref{fig:turk13-lineup} in \Sexpr{counts_turk13$n[14]} of \Sexpr{sum(counts_turk13$n)} evaluations; we should also examine how the Bayes factor performs when the null plots are much less likely to be selected. \autoref{fig:turk6-lineup} shows a lineup with overwhelming evidence suggesting that the target plot is disproportionately selected.
 <<turk6-lineup, fig.cap = sprintf("A lineup from \\todo{cite?} which was evaluated a total of %d times. Number of selections $c_i$ are shown at the top left of each panel; the calculated Bayes Factors with $\\alpha_1 = 0.5$ and $\\alpha_2 = 2$ is shown at the bottom right of the target panel (panel 4). The multidimensional (whole plot) bayes factor with the same $\\alpha_1,\\alpha_2$ values is %9.3e, indicating that there is overwhelming evidence that all plots are not equally likely to be selected; that is, that model 1 better aligns with the observed data than model 2.", sum(counts_turk6$n), bf_vec(1/2, 2, c = counts_turk6$n)), fig.width = 6, fig.height = 6/5*4.5, fig.align='center'>>=
 ggplot(t6_plot_lineup_data, aes(x = group, y = vals)) +
@@ -394,12 +434,57 @@ ggplot(t6_plot_lineup_data, aes(x = group, y = vals)) +
   geom_text(aes(x = Inf, y = -Inf, label = sprintf("BF == %9.3e", bf)),
             vjust = -0.2, hjust = 1, parse = T, data = filter(counts_turk6, .sample == 4), inherit.aes = F)
 @
-\subsubsection{Caveats}
+The corresponding visual p-value for this plot calculated as in \citet{majumder2013validation} is \Sexpr{sprintf("%0.4g", vis_p_value_orig(counts_turk6$n, sum(counts_turk6$n))[4])} and the modified p-value with $\alpha = 1$ is \Sexpr{sprintf("%0.4g", vis_p_value(counts_turk6$n, sum(counts_turk6$n))[4])}. The amount of evidence suggesting that the hypothesis that all plots are equally likely to be selected is staggering no matter which method is employed.
+
+Finally, it is good to assess the Bayes factor's performance on lineups which are somewhat ambiguous, with selections of the target plot as well as frequent selection of a null plot. Such a lineup is shown in \autoref{fig:turk6-ambiguous}, where panel 8 is the target panel and has a Bayes Factor of \Sexpr{sprintf("%.2f", filter(counts_turk6_ambig, .sample == 8)$bf)}. The corresponding binomial visual p-value is \Sexpr{sprintf("%.4g", vis_p_value_orig(counts_turk6_ambig$n, sum(counts_turk6_ambig$n))[8])} and the beta-binomial visual p-value with $\alpha=1$ is \Sexpr{sprintf("%.4g", vis_p_value(counts_turk6_ambig$n, sum(counts_turk6_ambig$n))[8])}. All methods provide some indication that the panels are not equally likely to be selected, but the support from the Bayes Factor might be best stated as ``moderate" while the p-values would be considered ``highly significant" by most standards.
+
+<<turk6-ambiguous, fig.cap = sprintf("A lineup from \\todo{cite?} which was evaluated a total of %d times. Number of selections $c_i$ are shown at the top left of each panel; the calculated Bayes Factors with $\\alpha_1 = 0.5$ and $\\alpha_2 = 2$ is shown at the bottom right of the target panel (panel 8). The multidimensional (whole plot) bayes factor with the same $\\alpha_1,\\alpha_2$ values is %9.3e, indicating that there is overwhelming evidence that all plots are not equally likely to be selected; that is, that model 1 better aligns with the observed data than model 2.", sum(counts_turk6$n), bf_vec(1/2, 2, c = counts_turk6$n)), fig.width = 6, fig.height = 6/5*4.5, fig.align='center'>>=
+ggplot(t6_ambig_data, aes(y = vals, fill = factor(group))) +
+  geom_boxplot() +
+  scale_fill_discrete(guide = F) +
+  facet_wrap(~.sample, ncol = 5) +
+  theme(axis.title = element_blank(), axis.text = element_blank(), axis.ticks = element_blank()) +
+  xlab("") + scale_y_continuous(expand = c(0.1,0)) +
+  geom_text(aes(x = -Inf, y = Inf, label = sprintf("c[%d] == %.0f", .sample, n)),
+            hjust = -0.2, vjust = 1, parse = T, data = counts_turk6_ambig, inherit.aes = F) +
+  geom_text(aes(x = Inf, y = -Inf, label = sprintf("BF == %9.3e", bf)),
+            vjust = -0.2, hjust = 1, parse = T, data = filter(counts_turk6_ambig, .sample == 8), inherit.aes = F)
+@
+
+\subsection{Hyperparameter Selection}
 % As a result, it's important to understand the effect of $\alpha$ on the posterior distribution.
-We know from experience as well as cognitive principles that it is unreasonable to assume that the selection probability of every null plot is precisely equal: null plots are randomly generated, and occasionally, the randomly generated plot will have an interesting feature (that may or may not be present in the target plot). When that occurs, the interesting null plot will be selected more frequently than the other nulls, despite being generated by the same distribution. The ability to identify stimuli as being different from one another is a fundamental part of cognition; the abstractions that allow us to use the terms `same' and `different' are fundamental to human intelligence\citep{mingWhenThingsAre2017}. As a result, when presented with a lineup, we will typically gravitate towards one or two panels which are different from our mental representation of a generalized panel on some measure, though not always the measure that's under investigation. In the theoretical Multinomial-Dirichlet model proposed above, the number of panels which appear to be different from a generalized lineup panel formed after viewing the lineup is a function of $\alpha$, the hyperparameter in \autoref{eqn:dirichlet-pdf} and \autoref{eqn:full-model-specification}. In practice, we would create a null plot generating model first, and set $\alpha$ according to the perceived difficulty of lineup evaluation using the null generating model in question. A difficult lineup, with many potentially interesting panels, would have a higher $\alpha$ value than an easy lineup with no null panels which were visually salient relative to the data panel.
+We know from experience as well as cognitive principles that it is unreasonable to assume that the selection probability of every null plot is precisely equal: null plots are randomly generated, and occasionally, the randomly generated plot will have an interesting feature (that may or may not be present in the target plot). When that occurs, the interesting null plot will be selected more frequently than the other nulls, despite being generated by the same distribution. The ability to identify stimuli as being different from one another is a fundamental part of cognition; the abstractions that allow us to use the terms `same' and `different' are fundamental to human intelligence\citep{mingWhenThingsAre2017}. As a result, when presented with a lineup, we will typically gravitate towards one or two panels which are different from our mental representation of a generalized panel on some measure, though not always the measure that's under investigation. In the theoretical Multinomial-Dirichlet model proposed in this paper, the number of panels which could be expected to be visually different in a generalized lineup is a function of $\alpha$, the hyperparameter in \autoref{eqn:dirichlet-pdf} and \autoref{eqn:full-model-specification}. In practice, we would create a null plot generating model first, and set $\alpha$ according to the perceived difficulty of lineup evaluation using the null generating model in question. A difficult lineup, with many potentially interesting panels, would have a higher $\alpha$ value than an easy lineup with no null panels which were visually salient relative to the data panel.
 
 Clearly, the choice of $\alpha$ is critical under both the frequentist and Bayesian model paradigms. From a practical perspective, the number of plots which are visually salient and thus likely to be selected by participants is a factor of the lineup design (zero, one, or two targets), null plot generation method, and possibly the form of the plot (aesthetics, geometric representations, scales). While the prior predictive distributions in \autoref{fig:prior-predictive} are illustrative, in practice, we do not have a particularly good instinct for what a reasonable value of $\alpha$ would be for a particular lineup generation method. In the next section, we derive a method for estimating $\alpha$ from Rorshach or standard lineups and discuss possible uses for this method in assessing null plot generation and lineup difficulty.
 
+<<vis-p-val-sensitivity-initial, fig.cap = "Sensitivity of visual p-value to selection of $\\alpha$ under the binomial and beta-binomial models", fig.width = 8, fig.height = 5, out.width = "\\textwidth">>=
+alphas <- exp(seq(-6, 6, by = .01))
+data_breaks <- c(1:5, 6, 8, 10, 15, 20)
+
+
+pv <- tidyr::crossing(alpha = alphas, C = data_breaks, K = 20) %>%
+  mutate(p = vis_p_value(C, K, alpha))
+pv2 <- tidyr::crossing(C = data_breaks, K = 20) %>%
+  mutate(p = vis_p_value_orig(C, K))
+
+ggplot(pv, aes(x = alpha, y = p, color = factor(C), group = factor(C))) +
+  geom_line(size = 1) +
+  geom_point(aes(x = exp(6.25), y = p, color = factor(C), shape = "Binomial\np-value"), data = pv2) +
+  scale_y_continuous("Visual p-value") +
+  scale_x_continuous(expression(alpha), trans = "log10", breaks = c(0.001, 0.01, .1, 1, 10, 100),
+                     labels = c("0.001", "0.01", "0.1", "1", "10", "100")) +
+  scale_color_brewer("# Data\nPanel\nIdentifications\n(K = 20)", palette = "Paired") +
+  scale_shape_discrete("") +
+  geom_hline(yintercept = 0.05, color = "grey") +
+  guides(color = guide_legend(override.aes = list(shape = NA))) +
+  annotate("segment", x = exp(6.25), xend = exp(6.25), y = -Inf, yend = .7, color = "grey", alpha = .5) +
+  annotate("text", x = exp(6.25), y = 0.7,
+           label = "Binomial\nmodel", vjust = -0.1) +
+  annotate("segment", x = 1, xend = 1, y = -Inf, yend = .7, color = "grey", alpha = .5) +
+  annotate("text", x = 1, y = 0.7,
+           label = "Beta-Binomial\nmodel", vjust = 0-0.1) +
+  theme_bw()
+@
 
 \section[Estimating alpha]{Estimating $\alpha$}
 \subsection{Derivation of MLE for $\alpha$}
