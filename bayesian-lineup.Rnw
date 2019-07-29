@@ -137,51 +137,53 @@ source("code/process_all_lineup_data.R")
 @
 
 <<lineup-bf-data-setup, cache = F, include = F, warning = F>>=
-t13plot_data <- read_csv("data/Turk13/lineups/data/data-1-1-1-20-2-14-5.csv")
-
-counts_turk13 <- studies_sum %>%
-  ungroup() %>%
-  filter(study == "turk13" & pic_id <=2) %>%
-  group_by(study, response_no) %>%
-  summarize(n = sum(n))%>%
-  mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
-  mutate(.sample_inner = response_no)
-
-counts_turk6 <- studies_sum %>%
-  ungroup() %>%
-  filter(study == "turk6" & pic_id == 1047) %>%
-  group_by(study, response_no) %>%
-  summarize(n = sum(n))%>%
-  mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
-  mutate(.sample = response_no)
-
-counts_turk6_ambig <- studies_sum %>%
-  ungroup() %>%
-  filter(study == "turk6" & pic_id == 995) %>%
-  group_by(study, response_no) %>%
-  summarize(n = sum(n))%>%
-  mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
-  mutate(.sample = response_no)
-
-t6plot_data <- read_csv("data/Turk6/turk6_n100_96_1_4.csv")
-library(beeswarm)
-
-t6_plot_lineup_data <- t6plot_data %>%
-		  split(.$.sample) %>%
-		  purrr::map2_dfr(., (1:length(.)) == 1, function(x, y) {
-		    if (y) {
-		      dev.new(width = 8, height = 8)
-		      beeswarm(formula = vals~group, data = x, add = F, do.plot = T, method = "swarm", cex = 2.5)
-		    }
-		    bs <- beeswarm(formula = vals~group, data = x, add = F, do.plot = F, method = "swarm", cex = 2.5)
-		    data.frame(vals = bs$y.orig, group = bs$x.orig, newy = bs$y,
-		               newx = bs$x, .sample = x$.sample[1])
-		  })
-dev.off()
-
-t6_ambig_data <- read_csv("data/Turk6/turk6_60_96_1_8.csv")
-
+# t13plot_data <- read_csv("data/Turk13/lineups/data/data-1-1-1-20-2-14-5.csv")
+#
+# counts_turk13 <- studies_sum %>%
+#   ungroup() %>%
+#   filter(study == "turk13" & pic_id <=2) %>%
+#   group_by(study, response_no) %>%
+#   summarize(n = sum(n))%>%
+#   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
+#   mutate(.sample_inner = response_no)
+#
+# counts_t6_sig <- studies_sum %>%
+#   ungroup() %>%
+#   filter(study == "turk6" & pic_id == 1047) %>%
+#   group_by(study, response_no) %>%
+#   summarize(n = sum(n))%>%
+#   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
+#   mutate(.sample = response_no)
+#
+# t6plot_data <- read_csv("data/Turk6/turk6_n100_96_1_4.csv")
+# library(beeswarm)
+#
+# t6_sig_data <- t6plot_data %>%
+# 		  split(.$.sample) %>%
+# 		  purrr::map2_dfr(., (1:length(.)) == 1, function(x, y) {
+# 		    if (y) {
+# 		      dev.new(width = 8, height = 8)
+# 		      beeswarm(formula = vals~group, data = x, add = F, do.plot = T, method = "swarm", cex = 2.5)
+# 		    }
+# 		    bs <- beeswarm(formula = vals~group, data = x, add = F, do.plot = F, method = "swarm", cex = 2.5)
+# 		    data.frame(vals = bs$y.orig, group = bs$x.orig, newy = bs$y,
+# 		               newx = bs$x, .sample = x$.sample[1])
+# 		  })
+# dev.off()
+#
+# t6_ambig_data <- read_csv("data/Turk6/turk6_60_96_1_8.csv")
+# counts_t6_ambig <- studies_sum %>%
+#   ungroup() %>%
+#   filter(study == "turk6" & pic_id == 995) %>%
+#   group_by(study, response_no) %>%
+#   summarize(n = sum(n))%>%
+#   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
+#   mutate(.sample = response_no)
+#
+# save(counts_t6_ambig, t6_ambig_data, t13plot_data, counts_turk13, t6_sig_data, counts_t6_sig, file = "data/turk6_13_examples.Rdata")
+load("data/turk6_13_examples.Rdata")
 @
+
 
 \section{A Bayesian's Statistical Lineup}
 While visual inference was initially developed to mimic frequentist hypothesis tests with the standard threshold of $p = 0.05$, the method itself does not require adherence to frequentist methods. In this section, we show one possible framework for visual inference, using a Dirichlet-multinomial distribution to model the probabilities of selecting each panel and a Multinomial distribution to model the observed participant selections. This framework can be thought of in the Bayesian sense, where we put a Dirichlet prior on the multinomial selection probabilities, or in the Frequentist sense as an overdispersed multinomial model.
@@ -231,14 +233,6 @@ Examining the parameters of either the full or marginal model specifications in 
 
 In addition to the pseudo-observation interpretation, $\alpha$ provides information about the number of panels in a lineup which are likely to attract participant interest. It is useful to detour slightly from our Bayesian analysis of lineups to explore the impact and interpretation(s) of $\alpha$ in the context of statistical lineups.
 
-
-\subsection{Dirichlet Hyperparameter}\label{sec:alpha}
-
-One application of this framework is in the construction of a Bayesian analogue of the frequentist p-value proposed in \citet{majumder2013validation} using Bayes factors. We explore this application in section \ref{sec:bayesfactor}.
-
-Examining the parameters of either the full or marginal model specifications in \autoref{eqn:full-model-specification} and \autoref{eqn:marginal-model-specification}, it is evident that $\alpha$ provides the equivalent of pseudo-observations for each plot; that is, the effect of $\alpha$ is equivalent to adding $\alpha$ identifications to each panel in the lineup. When $\alpha$ is small, these pseudo-observations have relatively little influence, but when $\alpha$ is large, the pseudo-observations can quickly dwarf any information provided by the data. This is particularly true for the marginal Beta-Binomial model, where the equivalent of $(m-1)\alpha$ pseudo-observations are added. In most lineup studies, a plot might be evaluated between 10 and 30 times; with a $m=20$ lineup, even $\alpha = 1$ can easily dominate the participant selection data.
-
-In addition to the pseudo-observation interpretation, $\alpha$ provides information about the number of panels in a lineup which are likely to attract participant interest. It is useful to detour slightly from our Bayesian analysis of lineups to explore the impact and interpretation(s) of $\alpha$ in the context of statistical lineups.
 
 \subsection{Dirichlet Hyperparameter}\label{sec:alpha}
 % Stolen from heike/lineup-scenarios
@@ -368,45 +362,6 @@ The marginal beta-binomial model considers the data detections and the aggregate
 
 The marginal and full Bayes factors derived above depend on parameters $\alpha_{M_1}$ and $\alpha_{M_2}$, where in our formulation $\alpha_{M_1} < \alpha_{M_2}$. We could choose values of $\alpha_{M_{1,2}}$ based on the prior predictive distributions shown in \autoref{fig:prior-predictive}, but it is also useful to assess the effect of different combinations of $\alpha_{M_{1,2}}$ on the resulting Bayes Factor.
 
-<<lineup-bf-data-setup, cache = F, include = F, warning = F>>=
-# t13plot_data <- read_csv("data/Turk13/lineups/data/data-1-1-1-20-2-14-5.csv")
-#
-# counts_turk13 <- studies_sum %>%
-#   ungroup() %>%
-#   filter(study == "turk13" & pic_id <=2) %>%
-#   group_by(study, response_no) %>%
-#   summarize(n = sum(n))%>%
-#   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
-#   mutate(.sample_inner = response_no)
-#
-# counts_turk6 <- studies_sum %>%
-#   ungroup() %>%
-#   filter(study == "turk6" & pic_id == 1047) %>%
-#   group_by(study, response_no) %>%
-#   summarize(n = sum(n))%>%
-#   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
-#   mutate(.sample = response_no)
-#
-# t6plot_data <- read_csv("data/Turk6/turk6_n100_96_1_4.csv")
-# library(beeswarm)
-#
-# t6_plot_lineup_data <- t6plot_data %>%
-# 		  split(.$.sample) %>%
-# 		  purrr::map2_dfr(., (1:length(.)) == 1, function(x, y) {
-# 		    if (y) {
-# 		      dev.new(width = 8, height = 8)
-# 		      beeswarm(formula = vals~group, data = x, add = F, do.plot = T, method = "swarm", cex = 2.5)
-# 		    }
-# 		    bs <- beeswarm(formula = vals~group, data = x, add = F, do.plot = F, method = "swarm", cex = 2.5)
-# 		    data.frame(vals = bs$y.orig, group = bs$x.orig, newy = bs$y,
-# 		               newx = bs$x, .sample = x$.sample[1])
-# 		  })
-# dev.off()
-#
-# save(t13plot_data, counts_turk13, t6_plot_lineup_data, counts_turk6, file = "data/turk6_13_examples.Rdata")
-load("data/turk6_13_examples.Rdata")
-@
-
 \autoref{fig:bayes-factors-alphas} shows Bayes Factors in the marginal case for combinations of $\alpha_1, \alpha_2$ over several different $C$ values, assuming a total of $K=20$ independent evaluations.
 <<bayes-factors-alphas, fig.width = 8, fig.height = 4, fig.cap = "Bayes factor values at different levels of $\\alpha_1$ and $\\alpha_2$. If there are large numbers of data panel identifications, the Bayes Factor will be large even with conservative parameter values (e.g. $\\alpha_1$ near 1, $\\alpha_2 =  2$). The choice of alphas is much more impactful when there are fewer data plot identifications. While the criteria for interpretation of Bayes factors vary, a result of $>20$ is generally considered to correspond to strong evidence toward $M_1$ over $M_2$." >>=
 
@@ -476,8 +431,8 @@ t13plot_data %>%
 One advantage of the Bayes factor method is that it seamlessly incorporates multiple target plot selections: a participant who selects $p$ panels of a lineup would contribute $1/p$ votes to each panel's total. In the frequentist model, it is not quite as easy to incorporate fractional counts into a multinomial distribution.
 
 Participants selected the data plot in \autoref{fig:turk13-lineup} in \Sexpr{counts_turk13$n[14]} of \Sexpr{sum(counts_turk13$n)} evaluations; we should also examine how the Bayes factor performs when the null plots are much less likely to be selected. \autoref{fig:turk6-lineup} shows a lineup with overwhelming evidence suggesting that the target plot is disproportionately selected.
-<<turk6-lineup, fig.cap = sprintf("A lineup from \\todo{cite?} which was evaluated a total of %d times. Number of selections $c_i$ are shown at the top left of each panel; the calculated Bayes Factors with $\\alpha_1 = 0.5$ and $\\alpha_2 = 2$ is shown at the bottom right of the target panel (panel 4). The multidimensional (whole plot) bayes factor with the same $\\alpha_1,\\alpha_2$ values is %9.3e, indicating that there is overwhelming evidence that all plots are not equally likely to be selected; that is, that model 1 better aligns with the observed data than model 2.", sum(counts_turk6$n), bf_vec(1/2, 2, c = counts_turk6$n)), fig.width = 6, fig.height = 6/5*4.5, fig.align='center'>>=
-ggplot(t6_plot_lineup_data, aes(x = group, y = vals)) +
+<<turk6-lineup, fig.cap = sprintf("A lineup from \\todo{cite?} which was evaluated a total of %d times. Number of selections $c_i$ are shown at the top left of each panel; the calculated Bayes Factors with $\\alpha_1 = 0.5$ and $\\alpha_2 = 2$ is shown at the bottom right of the target panel (panel 4). The multidimensional (whole plot) bayes factor with the same $\\alpha_1,\\alpha_2$ values is %9.3e, indicating that there is overwhelming evidence that all plots are not equally likely to be selected; that is, that model 1 better aligns with the observed data than model 2.", sum(counts_t6_sig$n), bf_vec(1/2, 2, c = counts_t6_sig$n)), fig.width = 6, fig.height = 6/5*4.5, fig.align='center'>>=
+ggplot(t6_sig_data, aes(x = group, y = vals)) +
   geom_boxplot(outlier.colour = 'NA', colour = "grey60", width = 0.75) +
   geom_point(aes(x = newx, y = newy, colour = factor(group)), shape = 1, size = 1) +
   scale_color_discrete(guide = F) +
@@ -485,15 +440,15 @@ ggplot(t6_plot_lineup_data, aes(x = group, y = vals)) +
   theme(axis.title = element_blank(), axis.text = element_blank(), axis.ticks = element_blank()) +
   xlab("") + scale_y_continuous(expand = c(0.1,0)) +
   geom_text(aes(x = -Inf, y = Inf, label = sprintf("c[%d] == %.0f", .sample, n)),
-            hjust = -0.2, vjust = 1, parse = T, data = counts_turk6, inherit.aes = F) +
+            hjust = -0.2, vjust = 1, parse = T, data = counts_t6_sig, inherit.aes = F) +
   geom_text(aes(x = Inf, y = -Inf, label = sprintf("BF == %9.3e", bf)),
-            vjust = -0.2, hjust = 1, parse = T, data = filter(counts_turk6, .sample == 4), inherit.aes = F)
+            vjust = -0.2, hjust = 1, parse = T, data = filter(counts_t6_sig, .sample == 4), inherit.aes = F)
 @
-The corresponding visual p-value for this plot calculated as in \citet{majumder2013validation} is \Sexpr{sprintf("%0.4g", vis_p_value_orig(counts_turk6$n, sum(counts_turk6$n))[4])} and the modified p-value with $\alpha = 1$ is \Sexpr{sprintf("%0.4g", vis_p_value(counts_turk6$n, sum(counts_turk6$n))[4])}. The amount of evidence suggesting that the hypothesis that all plots are equally likely to be selected is staggering no matter which method is employed.
+The corresponding visual p-value for this plot calculated as in \citet{majumder2013validation} is \Sexpr{sprintf("%0.4g", vis_p_value_orig(counts_t6_sig$n, sum(counts_t6_sig$n))[4])} and the modified p-value with $\alpha = 1$ is \Sexpr{sprintf("%0.4g", vis_p_value(counts_t6_sig$n, sum(counts_t6_sig$n))[4])}. The amount of evidence suggesting that the hypothesis that all plots are equally likely to be selected is staggering no matter which method is employed.
 
-Finally, it is good to assess the Bayes factor's performance on lineups which are somewhat ambiguous, with selections of the target plot as well as frequent selection of a null plot. Such a lineup is shown in \autoref{fig:turk6-ambiguous}, where panel 8 is the target panel and has a Bayes Factor of \Sexpr{sprintf("%.2f", filter(counts_turk6_ambig, .sample == 8)$bf)}. The corresponding binomial visual p-value is \Sexpr{sprintf("%.4g", vis_p_value_orig(counts_turk6_ambig$n, sum(counts_turk6_ambig$n))[8])} and the beta-binomial visual p-value with $\alpha=1$ is \Sexpr{sprintf("%.4g", vis_p_value(counts_turk6_ambig$n, sum(counts_turk6_ambig$n))[8])}. All methods provide some indication that the panels are not equally likely to be selected, but the support from the Bayes Factor might be best stated as ``moderate" while the p-values would be considered ``highly significant" by most standards.
+Finally, it is good to assess the Bayes factor's performance on lineups which are somewhat ambiguous, with selections of the target plot as well as frequent selection of a null plot. Such a lineup is shown in \autoref{fig:turk6-ambiguous}, where panel 8 is the target panel and has a Bayes Factor of \Sexpr{sprintf("%.2f", filter(counts_t6_ambig, .sample == 8)$bf)}. The corresponding binomial visual p-value is \Sexpr{sprintf("%.4g", vis_p_value_orig(counts_t6_ambig$n, sum(counts_t6_ambig$n))[8])} and the beta-binomial visual p-value with $\alpha=1$ is \Sexpr{sprintf("%.4g", vis_p_value(counts_t6_ambig$n, sum(counts_t6_ambig$n))[8])}. All methods provide some indication that the panels are not equally likely to be selected, but the support from the Bayes Factor might be best stated as ``moderate" while the p-values would be considered ``highly significant" by most standards.
 
-<<turk6-ambiguous, fig.cap = sprintf("A lineup from \\todo{cite?} which was evaluated a total of %d times. Number of selections $c_i$ are shown at the top left of each panel; the calculated Bayes Factors with $\\alpha_1 = 0.5$ and $\\alpha_2 = 2$ is shown at the bottom right of the target panel (panel 8). The multidimensional (whole plot) bayes factor with the same $\\alpha_1,\\alpha_2$ values is %9.3e, indicating that there is overwhelming evidence that all plots are not equally likely to be selected; that is, that model 1 better aligns with the observed data than model 2.", sum(counts_turk6$n), bf_vec(1/2, 2, c = counts_turk6$n)), fig.width = 6, fig.height = 6/5*4.5, fig.align='center'>>=
+<<turk6-ambiguous, fig.cap = sprintf("A lineup from \\todo{cite?} which was evaluated a total of %d times. Number of selections $c_i$ are shown at the top left of each panel; the calculated Bayes Factors with $\\alpha_1 = 0.5$ and $\\alpha_2 = 2$ is shown at the bottom right of the target panel (panel 8). The multidimensional (whole plot) bayes factor with the same $\\alpha_1,\\alpha_2$ values is %9.3e, indicating that there is overwhelming evidence that all plots are not equally likely to be selected; that is, that model 1 better aligns with the observed data than model 2.", sum(counts_t6_sig$n), bf_vec(1/2, 2, c = counts_t6_sig$n)), fig.width = 6, fig.height = 6/5*4.5, fig.align='center'>>=
 ggplot(t6_ambig_data, aes(y = vals, fill = factor(group))) +
   geom_boxplot() +
   scale_fill_discrete(guide = F) +
@@ -501,9 +456,9 @@ ggplot(t6_ambig_data, aes(y = vals, fill = factor(group))) +
   theme(axis.title = element_blank(), axis.text = element_blank(), axis.ticks = element_blank()) +
   xlab("") + scale_y_continuous(expand = c(0.1,0)) +
   geom_text(aes(x = -Inf, y = Inf, label = sprintf("c[%d] == %.0f", .sample, n)),
-            hjust = -0.2, vjust = 1, parse = T, data = counts_turk6_ambig, inherit.aes = F) +
+            hjust = -0.2, vjust = 1, parse = T, data = counts_t6_ambig, inherit.aes = F) +
   geom_text(aes(x = Inf, y = -Inf, label = sprintf("BF == %9.3e", bf)),
-            vjust = -0.2, hjust = 1, parse = T, data = filter(counts_turk6_ambig, .sample == 8), inherit.aes = F)
+            vjust = -0.2, hjust = 1, parse = T, data = filter(counts_t6_ambig, .sample == 8), inherit.aes = F)
 @
 
 \subsection{Hyperparameter Selection}
