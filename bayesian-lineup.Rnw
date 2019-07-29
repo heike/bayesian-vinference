@@ -406,8 +406,6 @@ The marginal and full Bayes factors derived above depend on parameters $\alpha_{
 # save(t13plot_data, counts_turk13, t6_plot_lineup_data, counts_turk6, file = "data/turk6_13_examples.Rdata")
 load("data/turk6_13_examples.Rdata")
 @
->>>>>>> 13b4d285c89074b10a364e943f17fd8f0de911c3
-
 
 \autoref{fig:bayes-factors-alphas} shows Bayes Factors in the marginal case for combinations of $\alpha_1, \alpha_2$ over several different $C$ values, assuming a total of $K=20$ independent evaluations.
 <<bayes-factors-alphas, fig.width = 8, fig.height = 4, fig.cap = "Bayes factor values at different levels of $\\alpha_1$ and $\\alpha_2$. If there are large numbers of data panel identifications, the Bayes Factor will be large even with conservative parameter values (e.g. $\\alpha_1$ near 1, $\\alpha_2 =  2$). The choice of alphas is much more impactful when there are fewer data plot identifications. While the criteria for interpretation of Bayes factors vary, a result of $>20$ is generally considered to correspond to strong evidence toward $M_1$ over $M_2$." >>=
