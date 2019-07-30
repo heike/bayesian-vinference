@@ -528,7 +528,7 @@ nm_0\psi(\alpha) - nm_0\psi(\alpha m_0) &= \sum_{ij} \ln \theta_{ij}\nonumber\\
 \end{align}
 % end modified from heike/lineup scenarios
 
-The second derivative of the log likelihood function uses the trigamma function, $\psi_1(x) = \frac{d^2}{dx^2} \ln \Gamma(x)$. $\psi_1(x)$ can also be written as the series $\psi_1(x) = \sum_{z=0}^\infty \frac{1}{(z + n)^2}$. Thus,
+The second derivative of the log likelihood function uses the trigamma function, $\psi_1(x) = \frac{d^2}{dx^2} \ln \Gamma(x)$. $\psi_1(x)$ can also be written as the series $\psi_1(x) = \sum_{z=0}^\infty \frac{1}{(z + x)^2}$. Thus,
 \begin{align}
 \frac{d^2}{d\alpha^2}\ln \mathscr{L}(\alpha|\theta) &= nm_0^2\psi_1(\alpha m_0) - nm_0\psi_1(\alpha)\\
 & = nm_0^2\left(\sum_{x=0}^\infty \frac{1}{(\alpha m_0 + x)^2} - \sum_{x=0}^\infty \frac{1}{m_0(\alpha + x)^2}\right)\nonumber\\
@@ -538,6 +538,7 @@ The second derivative of the log likelihood function uses the trigamma function,
 \end{align}
 The empirical solution to \autoref{eqn:mle} is thus a local maximum.
 
+\todo{Probably need to derive the std error... but that's likely to be trickier with the empirical solution? Need to check 601 notes or something. That's going to get more complicated if we show the weighted version... fml. I've only done all of this derivation for the simple unweighted version.}
 % stolen from heike/lineup-scenarios
 <<alpha-ml, include = F>>=
 source("code/alpha_ml.R")
@@ -584,7 +585,10 @@ plot_df %>%
 \caption{A lineup from Study 5. The target plot is in panel 7+7. Only one participant identified the target plot in 24 lineup evaluations. A total of 15 panels in this lineup were selected, indicating that the $\hat\alpha$ associated with this plot should be relatively large.}\label{fig:hard-lineup}
 \end{figure}
 
+\subsection{Variability in $\alpha$ as a diagnostic}
+
 One issue with lineup experiments is that participants sometimes identify features in the null plots which are interesting, but not necessarily interesting in the same way as the feature under investigation that is shown in the data plot. In some cases, this is because the lineup is particularly challenging or the target plot's effect is not visually significant, but in others, it can be an indicator that the null plot generation model is not adequately reproducing features in the data. In large lineup experiments, it can be difficult to screen every panel of every lineup for systematic null set generation issues, resulting in participant selection of null plots which have unintentional visually interesting features, as in \citet{vanderplas:2017}. In that study, null panel data were clustered using k-means; this clustering occasionally produced clusters of 1-3 points or clusters which were oddly shaped, and the panels showing these data sets were frequently identified by participants even though the original intent of the experiment was to assess the visual salience of clustering and linear trends in the presence of different aesthetic combinations. In the case of clusters of one or two points, estimation of a 95\% bounding ellipse failed, providing an unintended feature which participants noticed, resulting in significant null plot identifications. \autoref{fig:featurehierarchy-null-model-sucks} shows two lineups which contain the same data; the clustering issues are much more noticable in the lineup with color, shape, and bounding ellipse aesthetics.
+
 
 <<null-alpha-est>>=
 source("code/turk16_null_alpha.R")
@@ -608,73 +612,75 @@ gridExtra::grid.arrange(
 
 One possible solution to this problem is to run a small pilot study in which a Rorshach lineup is used to examine the selection frequency of different null plots. If one or two null plots are systematically selected from this Rorshach lineup, or if the $\hat\alpha$ values are highly variable, then the data-generating model may need to be examined for unintended effects such as those in \citet{vanderplas:2017}. Alternately, $\hat\alpha$ can be estimated from the null plot selections of a standard lineup, though if the lineup is relatively easy and null plots are selected infrequently, these estimates may be unstable.
 
+\todo{Conduct a null lineup study with the same parameters as the original, so that the estimates of $\alpha$ are comparable.}
+
 It is reasonable to think that $\hat\alpha$ would be different for the two lineups in \autoref{fig:featurehierarchy-null-model-sucks} even though the underlying data is the same: the color, shape, and ellipse aesthetics emphasize the missing elements and small cluster size, while this deficiency is much less apparent in the second lineup, which contains no aesthetic cues to indicate data clustering. We can estimate plot-specific $\hat\alpha$ for each of the plots shown in \autoref{fig:featurehierarchy-null-model-sucks}; the values are \Sexpr{sprintf("%0.3f and %0.3f", turk16_lineup_alphas$alpha[1], turk16_lineup_alphas$alpha[2])}, respectively. Thus, in the null plots shown in the first figure, which has color, shape, and ellipse aesthetics, $\theta_i, i = 1, ..., m_0$, there is more diffusion of probability over several plots than in the second lineup, which has only a regression line added to the plot.
 
 We can examine the $\hat\alpha$ estimates for each set of aesthetics to explore empirical support for this hypothesis. The full experiment details can be found in \citet{vanderplas:2017}; for the purposes of this reanalysis dealing only with the null plots, data was generated using three parameters: $k \in c(3, 5)$, the number of clusters, $\sigma_T$, the standard deviation around the trend line, and $\sigma_C$, the deviation around the cluster centers. Three values of $\sigma_T$ and $\sigma_C$ were used to represent varying degrees of difficulty, with small $\sigma$ values hypothesized to be easier than large $\sigma$ values. Thus, there are a total of 18 parameter combinations, and at each parameter combination there are 3 replicate lineup data sets, for a total of 54 datasets. Each dataset is rendered in 10 different aesthetic combinations, for a total of 540 plots.
 
 With this design in mind, individual $\hat\alpha$ values were calculated from the null plot selection data for each lineup, to get a sense of the variability in the $\hat\alpha$ estimates. In some lineups, null plots were never selected; estimates have been excluded for these plots. \autoref{fig:all-null-alphas} shows the results by aesthetic for each lineup data set used in \citet{vanderplas:2017}.
-<<all-null-alphas, fig.cap = "Alpha estimates for each lineup image with at least 5 null panel selections, with aggregate estimates for each parameter set and aesthetic combination with a total of 5 null panel selections across multiple plots. There are some differences between aesthetics in average $\\hat\\alpha$, but overall, most $\\alpha$ values are estimated to be around 0.7. The variability in $\\hat\\alpha$ increases with the value of $\\sigma_C$ and $\\sigma_T$, the trend and cluster variability parameters. Note that on the y-axis, aesthetics are indicated as follows: C = color, L = ellipse, S = shape, T = trend line, E = error band. $\\hat\\alpha$s tend to be more variable when color aesthetics are present - if only one null plot has an unequal group, $\\alpha$ will tend to be very small; if more than one null plots have unequal groups, $\\alpha$ tends to be larger. Pooled estimates of the 3 plots generated with the same parameters and displayed with the same aesthetics are shown with an 'x'.", fig.width = 8, fig.height = 6>>=
-
-plot_t16_alpha_df <- t16_null_alpha_plotwise %>%
-  mutate(valtype = "Individual Plot") %>%
-  bind_rows(
-    mutate(t16_null_alpha_setwise, valtype = "Pooled")
-  ) %>%
-  mutate(label = sprintf("Plots %02.0f-%02.0f", set_min, set_min+2),
-         klab = sprintf("k == %d", k),
-         siglab1 = paste("sigma[T] == ", round(sdline, 2)),
-         siglab2 = paste("sigma[C] == ", round(sdgroup, 2)),
-         aes_type = fix_plot_names(aes_type)) %>%
-  ungroup() %>%
-  mutate(sig_int = interaction(sdline, sdgroup) %>% factor() %>% as.numeric()) %>%
-  group_by(k) %>%
-  mutate(y_val = (sig_int - 6)/9) %>%
-  ungroup()
-
-plot_t16_alpha_segs <- plot_t16_alpha_df %>%
-  group_by(aes_type, siglab1, siglab2, sig_int) %>%
-  summarize(minp = min(alpha), maxp = max(alpha), y_val = unique(y_val))
-
-ggplot() + coord_flip() +
-  scale_size_continuous("# Null Evaluations", range = c(1, 4)) +
-  geom_segment(aes(x = y_val, xend = y_val, y = minp, yend = maxp),
-               data = plot_t16_alpha_segs,
-               alpha = .25) +
-  geom_point(aes(y = alpha, x = y_val, size = n_total,
-                 color = factor(k),
-                 shape = valtype),
-             data = plot_t16_alpha_df) +
-  scale_shape_manual("Estimate Type", values = c("Individual Plot" = 1, "Pooled" = 4)) +
-  scale_color_manual("# Clusters", values = c("3" = "purple", "5" = "orange")) +
-  ylab("") +
-  scale_y_continuous(name = expression(alpha)) +
-  scale_x_continuous(breaks = NULL) +
-  # facet_grid(siglab1 ~., labeller = label_parsed) +
-  facet_grid(aes_type ~ .) +
-  theme_bw() +
-  theme(legend.position = "bottom", axis.title.y = element_blank())
-@
-
-<<all-null-alpha-pooled, fig.cap = "Alpha estimates calculated by pooling within null plot generating parameters and between null plot generating parameters. It is clear that the introduction of color and other aesthetics which highlight clustering causes an increase in $\\hat\\alpha$ estimates when data is aggregated; this effect is likely due to the inclusion of plots with several null targets with groups of noticably different sizes; there is significant variability in the $\\hat\\alpha$ estimates based on single data sets and based on single parameter sets because the randomly generated null plot data does not consistently produce the same number of null plots with this interesting characteristic.", fig.width = 4, fig.height = 5>>=
-t16_null_alpha_setwise %>%
-  mutate(valtype = "Pooled (single parameter set)") %>%
-  bind_rows(
-    mutate(t16_null_alpha_aeswise, valtype = "Pooled (all parameter sets)")
-  ) %>%
-  mutate(label = sprintf("Plots %02.0f-%02.0f", set_min, set_min+2),
-         klab = sprintf("k == %d", k),
-         siglab1 = paste("sigma[T] == ", round(sdline, 2)),
-         siglab2 = paste("sigma[C] == ", round(sdgroup, 2)),
-         aes_type = fix_plot_names(aes_type)) %>%
-ggplot(aes(x = alpha, y = aes_type)) +
-  geom_point(aes(shape = valtype, alpha = valtype)) +
-  scale_shape_manual("Estimate Type", values = c("Pooled (single parameter set)" = 4, "Pooled (all parameter sets)" = 20)) +
-  scale_alpha_manual("Estimate Type", values = c("Pooled (single parameter set)" = .5, "Pooled (all parameter sets)" = 1)) +
-  ylab("") +
-  scale_x_continuous(name = expression(alpha)) +
-  theme_bw() +
-  theme(legend.position = "bottom", axis.title.y = element_blank())
-@
+% <<all-null-alphas, fig.cap = "Alpha estimates for each lineup image with at least 5 null panel selections, with aggregate estimates for each parameter set and aesthetic combination with a total of 5 null panel selections across multiple plots. There are some differences between aesthetics in average $\\hat\\alpha$, but overall, most $\\alpha$ values are estimated to be around 0.7. The variability in $\\hat\\alpha$ increases with the value of $\\sigma_C$ and $\\sigma_T$, the trend and cluster variability parameters. Note that on the y-axis, aesthetics are indicated as follows: C = color, L = ellipse, S = shape, T = trend line, E = error band. $\\hat\\alpha$s tend to be more variable when color aesthetics are present - if only one null plot has an unequal group, $\\alpha$ will tend to be very small; if more than one null plots have unequal groups, $\\alpha$ tends to be larger. Pooled estimates of the 3 plots generated with the same parameters and displayed with the same aesthetics are shown with an 'x'.", fig.width = 8, fig.height = 6>>=
+%
+% plot_t16_alpha_df <- t16_null_alpha_plotwise %>%
+%   mutate(valtype = "Individual Plot") %>%
+%   bind_rows(
+%     mutate(t16_null_alpha_setwise, valtype = "Pooled")
+%   ) %>%
+%   mutate(label = sprintf("Plots %02.0f-%02.0f", set_min, set_min+2),
+%          klab = sprintf("k == %d", k),
+%          siglab1 = paste("sigma[T] == ", round(sdline, 2)),
+%          siglab2 = paste("sigma[C] == ", round(sdgroup, 2)),
+%          aes_type = fix_plot_names(aes_type)) %>%
+%   ungroup() %>%
+%   mutate(sig_int = interaction(sdline, sdgroup) %>% factor() %>% as.numeric()) %>%
+%   group_by(k) %>%
+%   mutate(y_val = (sig_int - 6)/9) %>%
+%   ungroup()
+%
+% plot_t16_alpha_segs <- plot_t16_alpha_df %>%
+%   group_by(aes_type, siglab1, siglab2, sig_int) %>%
+%   summarize(minp = min(alpha), maxp = max(alpha), y_val = unique(y_val))
+%
+% ggplot() + coord_flip() +
+%   scale_size_continuous("# Null Evaluations", range = c(1, 4)) +
+%   geom_segment(aes(x = y_val, xend = y_val, y = minp, yend = maxp),
+%                data = plot_t16_alpha_segs,
+%                alpha = .25) +
+%   geom_point(aes(y = alpha, x = y_val, size = n_total,
+%                  color = factor(k),
+%                  shape = valtype),
+%              data = plot_t16_alpha_df) +
+%   scale_shape_manual("Estimate Type", values = c("Individual Plot" = 1, "Pooled" = 4)) +
+%   scale_color_manual("# Clusters", values = c("3" = "purple", "5" = "orange")) +
+%   ylab("") +
+%   scale_y_continuous(name = expression(alpha)) +
+%   scale_x_continuous(breaks = NULL) +
+%   # facet_grid(siglab1 ~., labeller = label_parsed) +
+%   facet_grid(aes_type ~ .) +
+%   theme_bw() +
+%   theme(legend.position = "bottom", axis.title.y = element_blank())
+% @
+%
+% <<all-null-alpha-pooled, fig.cap = "Alpha estimates calculated by pooling within null plot generating parameters and between null plot generating parameters. It is clear that the introduction of color and other aesthetics which highlight clustering causes an increase in $\\hat\\alpha$ estimates when data is aggregated; this effect is likely due to the inclusion of plots with several null targets with groups of noticably different sizes; there is significant variability in the $\\hat\\alpha$ estimates based on single data sets and based on single parameter sets because the randomly generated null plot data does not consistently produce the same number of null plots with this interesting characteristic.", fig.width = 4, fig.height = 5>>=
+% t16_null_alpha_setwise %>%
+%   mutate(valtype = "Pooled (single parameter set)") %>%
+%   bind_rows(
+%     mutate(t16_null_alpha_aeswise, valtype = "Pooled (all parameter sets)")
+%   ) %>%
+%   mutate(label = sprintf("Plots %02.0f-%02.0f", set_min, set_min+2),
+%          klab = sprintf("k == %d", k),
+%          siglab1 = paste("sigma[T] == ", round(sdline, 2)),
+%          siglab2 = paste("sigma[C] == ", round(sdgroup, 2)),
+%          aes_type = fix_plot_names(aes_type)) %>%
+% ggplot(aes(x = alpha, y = aes_type)) +
+%   geom_point(aes(shape = valtype, alpha = valtype)) +
+%   scale_shape_manual("Estimate Type", values = c("Pooled (single parameter set)" = 4, "Pooled (all parameter sets)" = 20)) +
+%   scale_alpha_manual("Estimate Type", values = c("Pooled (single parameter set)" = .5, "Pooled (all parameter sets)" = 1)) +
+%   ylab("") +
+%   scale_x_continuous(name = expression(alpha)) +
+%   theme_bw() +
+%   theme(legend.position = "bottom", axis.title.y = element_blank())
+% @
 
 The estimated $\hat\alpha$ value can then be used either in the specification of the null model $\alpha$ ($\alpha_{M_2}$) or in the calculation of the visual p-value under the frequentist framework. Currently, in either scenario, the data used in the calculation are the target plot identifications and the sum of all null plot identifications; the individual values of the null plot identifications are not used. These data can be reclaimed to estimate a general $\alpha$ for the overall null model generation scheme, or, in an ideal situation, Rorshach lineups could be used to estimate $\alpha$ directly without any possible contamination effects induced by the presence of target plots.
 
