@@ -178,3 +178,26 @@ plot_df <- studies_alpha_est %>%
 #   scale_x_continuous("Dataset") +
 #   scale_y_continuous(expression(hat(alpha))) +
 #   ggtitle(expression(paste(hat(alpha), " for Single-target Lineup Studies")))
+
+turk16_details <- read_csv("data/Turk16/data-picture-details-gini.csv") %>%
+  mutate(obs = str_extract(obs_plot_location, "^\\d{1,2}, \\d{1,2}"),
+         obs = purrr::map(obs, ~str_split(., ",") %>%
+                            unlist() %>% parse_number())
+  ) %>%
+  rename(data_id = pic_id) %>%
+  mutate(pic_id = (data_id-1)*10+j)
+
+turk16_sum <- read.csv("data/Turk16/turk16_results.csv", stringsAsFactors = F) %>%
+  mutate(response = purrr::map(response_no, ~tibble(response = str_split(., ",") %>% unlist() %>% parse_number(),
+                                                    weight = 1/length(response)))) %>%
+  unnest() %>%
+  group_by(pic_id, response) %>%
+  summarize(n = sum(weight)) %>%
+  complete(crossing(pic_id, response = 1:20), fill = list(n = 0)) %>%
+  ungroup()
+
+turk16_sum2 <- turk16_sum %>%
+  left_join(turk16_details) %>%
+  mutate(target = purrr::map2_lgl(response, obs, function(x, y) x %in% unlist(y)))
+
+write_csv(select(turk16_sum2, -obs), "data/turk16_results_summary.csv")
