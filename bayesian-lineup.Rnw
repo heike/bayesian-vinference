@@ -184,7 +184,7 @@ source("code/process_all_lineup_data.R")
 load("data/turk6_13_examples.Rdata")
 @
 
-While visual inference was initially developed to mimic frequentist hypothesis tests with the standard threshold of $p = 0.05$, the method itself does not require adherence to frequentist methods. In this section, we show one possible framework for visual inference, using a Dirichlet-multinomial distribution to model the probabilities of selecting each panel and a Multinomial distribution to model the observed participant selections. This framework can be thought of in the Bayesian sense, where we put a Dirichlet prior on the multinomial selection probabilities, or in the Frequentist sense as an overdispersed multinomial model.
+While visual inference was initially developed to mimic frequentist hypothesis tests with the standard threshold of $p = 0.05$, visual inference itself does not require use of frequentist techniques. In this section, we show one possible framework for visual inference, using a Dirichlet-multinomial distribution to model the probabilities of selecting each panel and a Multinomial distribution to model the observed participant selections. This framework for analysis of visual inference data has been in use as part of the \texttt{vinference} package \citep{vinference} for several years but has not been presented as part of a publication before \svp{I think this is true, but I'm not 100\% sure...}.
 
 \section{Lineup Model Specification}
 We will begin with a generic $m$-panel lineup, with selection probabilities $\theta_i, i = 1, ..., m$ where $\sum_{i=1}^m \theta_i = 1$, that is, the participant will select one (and only one) panel from the lineup as the most different. Our lineup has been evaluated by $K$ individuals, with $c_i, i = 1, ..., m$ the selection count for each panel, and $K = \sum_{i=1}^m c_i$.
@@ -225,12 +225,11 @@ f(c_t | \theta_t) & \sim Binomial(\theta_t, K)\\
 p(\theta_t | \bm{c_t}, \alpha) & \sim Beta(c_t + \alpha, K - c_t + (m-1)\alpha)
 \end{split}\end{align}
 
-One application of this framework is in the construction of a Bayesian analogue of the frequentist p-value proposed in \citet{majumder2013validation} using Bayes factors. We explore this application in section \ref{sec:bayesfactor}.
+While we have used the vocabulary of a Bayesian model, it should be noted that this modeling strategy is actually philosophically agnostic: it would be equally reasonable to think of this as an overdispersed multinomial model.
 
 Examining the parameters of either the full or marginal model specifications in \autoref{eqn:full-model-specification} and \autoref{eqn:marginal-model-specification}, it is evident that $\alpha$ provides the equivalent of pseudo-observations for each plot; that is, the effect of $\alpha$ is equivalent to adding $\alpha$ identifications to each panel in the lineup. When $\alpha$ is small, these pseudo-observations have relatively little influence, but when $\alpha$ is large, the pseudo-observations can quickly dwarf any information provided by the data. This is particularly true for the marginal Beta-Binomial model, where the equivalent of $(m-1)\alpha$ pseudo-observations are added. In most lineup studies, a plot might be evaluated between 10 and 30 times; with a $m=20$ lineup, even $\alpha = 1$ can easily dominate the participant selection data.
 
-In addition to the pseudo-observation interpretation, $\alpha$ provides information about the number of panels in a lineup which are likely to attract participant interest. It is useful to detour slightly from our Bayesian analysis of lineups to explore the impact and interpretation(s) of $\alpha$ in the context of statistical lineups.
-
+In addition to the pseudo-observation interpretation, $\alpha$ provides information about the number of panels in a lineup which are likely to attract participant interest. It is useful to detour slightly from the discussion of visual inference to explore the impact and interpretation(s) of $\alpha$ in the context of statistical lineups.
 
 \section{Dirichlet Hyperparameter}\label{sec:alpha}
 % Stolen from heike/lineup-scenarios
