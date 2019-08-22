@@ -184,7 +184,7 @@ source("code/process_all_lineup_data.R")
 load("data/turk6_13_examples.Rdata")
 @
 
-While visual inference was initially developed to mimic frequentist hypothesis tests with the standard threshold of $p = 0.05$, visual inference itself does not require use of frequentist techniques. In this section, we show one possible framework for visual inference, using a Dirichlet-multinomial distribution to model the probabilities of selecting each panel and a Multinomial distribution to model the observed participant selections. This framework for analysis of visual inference data has been in use as part of the \texttt{vinference} package \citep{vinference} for several years but has not been presented as part of a publication before \svp{I think this is true, but I'm not 100\% sure...}.
+While visual inference was initially developed to mimic frequentist hypothesis tests with the standard threshold of $p = 0.05$, visual inference itself does not require use of frequentist techniques. In this section, we show one possible framework for visual inference, using a Dirichlet-multinomial distribution to model the probabilities of selecting each panel and a Multinomial distribution to model the observed participant selections. This framework for analysis of visual inference data has been in use as part of the \texttt{vinference} package~\citep{vinference} for several years but has not been presented as part of a publication before \svp{I think this is true, but I'm not 100\% sure...}.
 
 \section{Lineup Model Specification}
 We will begin with a generic $m$-panel lineup, with selection probabilities $\theta_i, i = 1, ..., m$ where $\sum_{i=1}^m \theta_i = 1$, that is, the participant will select one (and only one) panel from the lineup as the most different. Our lineup has been evaluated by $K$ individuals, with $c_i, i = 1, ..., m$ the selection count for each panel, and $K = \sum_{i=1}^m c_i$.
@@ -233,7 +233,7 @@ In addition to the pseudo-observation interpretation, $\alpha$ provides informat
 
 \section{Dirichlet Hyperparameter}\label{sec:alpha}
 % Stolen from heike/lineup-scenarios
-When $\alpha = 1$, the symmetric Dirichlet distribution is uniform on the $m-1$ dimensional simplex. When $\alpha < 1$, the mass of the distribution is along the edges of the simplex, where most values of $\theta_i$ will be close to 0. When $\alpha>1$, the mass of the distribution is in the center of the simplex, with most of the $\theta_i$ having similar values. \autoref{fig:simplex} shows ternary plots of values simulated from a 3-dimensional Dirichlet distribution which illustrate the effect of $\alpha$ on the sampled $\bm\theta$.
+When $\alpha = 1$, the symmetric Dirichlet distribution is uniform on the $m-1$ dimensional simplex. When $\alpha < 1$, the mass of the distribution is along the edges of the simplex, where most values of $\theta_i$ will be close to 0. When $\alpha>1$, the mass of the distribution is in the center of the simplex, with most of the $\theta_i$ having similar values. \autoref{fig:simplex} shows ternary plots~\citep{ggtern} of values simulated from a 3-dimensional Dirichlet distribution which illustrate the effect of $\alpha$ on the sampled $\bm\theta$.
 
 <<simplex, echo=FALSE, out.width='\\textwidth', fig.width=12, fig.height=4, fig.cap = "Dirichlet distributed samples on the 2-dimensional simplex.">>=
 simplex <- purrr::map_df(.x = c(1/3, 1, 3), ~data.frame(
@@ -293,13 +293,13 @@ The data model used in \citet{majumder2013validation} assumes $\theta_t = 1/m$, 
 \begin{align}
 P(C\geq x) = \sum_{x = C}^{K} \binom{K}{x} \frac{1}{B(\alpha, (m-1)\alpha)}\cdot B(x+\alpha, K-x+(m-1)\alpha)\label{eqn:sim-pmf}
 \end{align}
-where $C$ is the number of data panel detections and $K$ is the number of independent evaluations of the lineup\citep{vinference,vanderplas:2017,loyAreYouNormal2015}. The \texttt{vinference} package calculated visual p-values by simulating draws of $\theta$ from a uniform distribution (which corresponds to an assumption that $\alpha=1$) but the more general solution is useful to consider, as we may not actually believe $\theta$ is uniformly distributed over the $(m - 1)$ simplex.
+where $C$ is the number of data panel detections and $K$ is the number of independent evaluations of the lineup~\citep{vinference,vanderplas:2017,loyAreYouNormal2015}. The \texttt{vinference} package calculated visual p-values by simulating draws of $\theta$ from a uniform distribution (which corresponds to an assumption that $\alpha=1$) but the more general solution is useful to consider, as we may not actually believe $\theta$ is uniformly distributed over the $(m - 1)$ simplex.
 
 In the past, we have compared this visual p-value to a threshold of 0.05, and if it is smaller, we rejected the hypothesis that every plot is equally likely to be selected. It is not necessary to rely on hypothesis testing for this analysis; an equally valid approach would be to compare two competing models: one with $\alpha \ll 1$, which allows for a smaller set of panels to be selected, and one with $\alpha \gg 1$, which would correspond to a more equal theoretical distribution of panel selections, using a Bayes Factor to quantify the evidence in favor of either model. This approach is derived in the next section.
 % Now that we have some intuition for the effect of the value of $\alpha$, we can proceed with deriving a Bayes Factor for visual inference analysis.
 
 \section{Bayes Factors for Lineups}\label{sec:bayesfactors}
-Bayes factors are somewhat analogous to frequentist hypothesis tests \citep{kassBayesFactors1995}, but to construct a Bayes factor for a lineup, we need two models to compare.
+Bayes factors are somewhat analogous to frequentist hypothesis tests~\citep{kassBayesFactors1995}, but to construct a Bayes factor for a lineup, we need two models to compare.
 In order to construct a Bayes Factor which would be roughly equivalent to the standard lineup evaluation, we would compare two models with different hyperparameters: the model structure is the same, but in the first model, we would expect one or two of the panels to be selected more frequently (corresponding to a low value of $\alpha$); in the second, we would expect all panels to be selected approximately equally (corresponding to a high value of $\alpha$).
 
 \begin{description}
@@ -309,7 +309,7 @@ In order to construct a Bayes Factor which would be roughly equivalent to the st
 
 \autoref{fig:prior-predictive} shows the sorted panel selection counts for several values of $\alpha$; note that even at $\alpha=1000$, all plots are not selected equally (the equivalent of the null hypothesis in the visual p-value calculation in \citet{majumder:2013}).
 
-As with the direct p-value calculation, we will first consider the construction of a Bayes Factor for an entire lineup (e.g. all 20 panels), and then we will consider the marginal Bayes factor which is more comparable to the approach used to assess lineups in previous studies \citep{majumder2013validation} (see  \autoref{eqn:sim-pmf}).
+As with the direct p-value calculation, we will first consider the construction of a Bayes Factor for an entire lineup (e.g. all 20 panels), and then we will consider the marginal Bayes factor which is more comparable to the approach used to assess lineups in previous studies~\citep{majumder2013validation} (see  \autoref{eqn:sim-pmf}).
 
 \subsection{Full Lineup Bayes Factors}
 
@@ -408,7 +408,7 @@ We can see that there is no significant support for the choice of model 1 over m
 The target panel, which is in panel 14, had relatively few selections, resulting in a marginal Bayes Factor of 1.03.
 The full-model Bayes Factor of \Sexpr{bf_vec(1/2, 2, c = counts_turk13$n)} indicates that there is some evidence that all plots are not equally likely to be selected, primarily due to the multiple selections of a null plot in panel 4.
 The marginal Bayes Factor for panel 4 is \Sexpr{bf(1/2, 2, c = counts_turk13$n)[4]}, which would correspond to weak support for $M_1$ over $M_2$ if panel 4 had been contained the data.
-The corresponding visual p-value for this plot calculated from the binomial distribution \citep{majumder2013validation} is \Sexpr{sprintf("%0.4g", vis_p_value_orig(counts_turk13$n, sum(counts_turk13$n))[14])} and the beta-binomial p-value with $\alpha = 1$ is \Sexpr{sprintf("%0.4g", vis_p_value(counts_turk13$n, sum(counts_turk13$n))[14])}.
+The corresponding visual p-value for this plot calculated from the binomial distribution~\citep{majumder2013validation} is \Sexpr{sprintf("%0.4g", vis_p_value_orig(counts_turk13$n, sum(counts_turk13$n))[14])} and the beta-binomial p-value with $\alpha = 1$ is \Sexpr{sprintf("%0.4g", vis_p_value(counts_turk13$n, sum(counts_turk13$n))[14])}.
 In this example, the conclusion would be the same for frequentist and Bayesian tests of the hypothesis that every plot is approximately likely to be selected.
 
 <<turk13-lineup, fig.cap = sprintf("A lineup from \\citet{loyAreYouNormal2015} which was evaluated a total of %d times. Number of selections $c_i$ are shown at the top left of each panel; the calculated Bayes Factors with $\\alpha_1 = 0.5$ and $\\alpha_2 = 2$ is shown at the bottom right of the target panel (panel 14). As panel 4 was selected more frequently than panel 14, there is no significant information in favor of model 1 (the target plot is more likely to be selected than the nulls) over model 2. The multidimensional (whole plot) bayes factor with the same $\\alpha_1,\\alpha_2$ values is %.2f, indicating that there is weak to moderate evidence that all plots are not equally likely to be selected; that is, that model 1 better aligns with the observed data than model 2. Note that this evidence support is primarily due to the multiple selections of panel 4, which shows data generated by the null data model.", sum(counts_turk13$n), bf_vec(1/2, 2, c = counts_turk13$n)), fig.width = 6, fig.height = 6/5*4.5, fig.align='center', out.width = ".66\\textwidth">>=
@@ -465,7 +465,7 @@ The Bayes factors presented in this section provide another way to evaluate visu
 
 We know from experience as well as cognitive principles that it is unreasonable to assume that the selection probability of every null plot is precisely equal: null plots are randomly generated, and occasionally, the randomly generated plot will have an interesting feature (that may or may not be present in the target plot).
 When that occurs, the interesting null plot will be selected more frequently than the other nulls, despite being generated by the same distribution.
-The ability to identify stimuli as being different from one another is a fundamental part of cognition; the abstractions that allow us to use the terms `same' and `different' are fundamental to human intelligence\citep{mingWhenThingsAre2017}.
+The ability to identify stimuli as being different from one another is a fundamental part of cognition; the abstractions that allow us to use the terms `same' and `different' are fundamental to human intelligence~\citep{mingWhenThingsAre2017}.
 As a result, when presented with a lineup, we will typically gravitate towards one or two panels which are different from our mental representation of a generalized panel on some measure, though not always the measure that's under investigation.
 In the theoretical Multinomial-Dirichlet model proposed in this paper, the number of panels which could be expected to be visually different in a generalized lineup is a function of $\alpha$, the hyperparameter in \autoref{eqn:dirichlet-pdf} and \autoref{eqn:full-model-specification}.
 In practice, we would create a null plot generating model first, and set $\alpha$ according to the perceived difficulty of lineup evaluation using the null generating model in question.
