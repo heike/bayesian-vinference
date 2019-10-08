@@ -75,9 +75,9 @@ t16_null_wide %>% filter(aes_type == "plain", set_type == "k-3-sdline-0.25-sdgro
 t16_null_alpha <- t16_null_wide %>%
   extract(set_type, into = c("k", "sdline", "sdgroup"), regex = "k-([35])-sdline-([\\d\\.]{1,})-sdgroup-([\\d\\.]{1,})") %>%
   mutate_at(vars(k, sdline, sdgroup), as.numeric) %>%
-  group_by(aes_type) %>%
-  nest() %>%
-  mutate(alpha = purrr::map_dbl(data, function(x) alpha.ml(as.matrix(x[,-c(1:5)])))) %>%
+  # group_by(aes_type) %>%
+  nest(-aes_type) %>%
+  mutate(alpha = purrr::map_dbl(data, function(x) alpha.ml(as.matrix(x[,-c(1:6)])))) %>%
   mutate(aes_type = factor(aes_type, levels = c("colorShapeEllipse", "colorTrend", "colorEllipse", "colorShape", "shape", "color", "trend", "plain", "colorEllipseTrendError", "trendError"), ordered = T)) %>%
   mutate(alpha_type = "null")
 
@@ -97,8 +97,8 @@ t16_all_wide <- t16_res %>%
 t16_all_alpha <- t16_all_wide %>%
   extract(set_type, into = c("k", "sdline", "sdgroup"), regex = "k-([35])-sdline-([\\d\\.]{1,})-sdgroup-([\\d\\.]{1,})") %>%
   mutate_at(vars(k, sdline, sdgroup), as.numeric) %>%
-  group_by(aes_type) %>%
-  nest() %>%
+  # group_by(aes_type) %>%
+  nest(-aes_type) %>%
   mutate(alpha = purrr::map_dbl(data, function(x) alpha.ml(as.matrix(x[,-c(1:5)])))) %>%
   mutate(aes_type = factor(aes_type, levels = c("colorShapeEllipse", "colorTrend", "colorEllipse", "colorShape", "shape", "color", "trend", "plain", "colorEllipseTrendError", "trendError"), ordered = T)) %>%
   mutate(alpha_type = "all")
