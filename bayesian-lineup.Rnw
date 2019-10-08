@@ -81,7 +81,7 @@
 % Something about the power of the human visual system? Don't want to get too off topic...
 <<setup, echo = F, include = F>>=
 library(tidyverse)
-knitr::opts_chunk$set(echo = F, message = F)
+knitr::opts_chunk$set(echo = F, message = F, warning = F)
 # theme_set(theme_bw())
 @
 
