@@ -47,6 +47,7 @@ t16_null_alpha_plotwise <- t16_null_wide %>%
   nest(`1`:`18`) %>%
   mutate(alpha = purrr::map2_dbl(data, n_total,
                                  function(x, y) alpha.ml(as.matrix(x), weight = y))) %>%
+  ungroup() %>%
   mutate(aes_type = factor(aes_type, levels = aes_order, ordered = T)) %>%
   mutate(alpha_type = "null") %>%
   group_by(k, sdline, sdgroup) %>%
@@ -60,11 +61,11 @@ t16_null_alpha_setwise <- t16_null_wide %>%
   nest() %>%
   mutate(n = purrr::map(data, "n_total")) %>%
   mutate(alpha = purrr::map2_dbl(data, n, function(x, y) alpha.ml(as.matrix(x), weight = y))) %>%
-  mutate(aes_type = factor(aes_type, levels = aes_order, ordered = T)) %>%
   mutate(alpha_type = "null") %>%
   mutate(n_total = purrr::map_dbl(n, sum)) %>%
   filter(n_total > 4) %>%
   group_by(k, sdline, sdgroup) %>%
+  mutate(aes_type = factor(aes_type, levels = aes_order, ordered = T)) %>%
   mutate(set_min = min(purrr::map_dbl(data, ~min(.$set_number))),
          set_max = max(purrr::map_dbl(data, ~max(.$set_number))))
 
@@ -77,9 +78,10 @@ t16_null_alpha_aeswise <- t16_null_wide %>%
   nest() %>%
   mutate(n = purrr::map(data, "n_total")) %>%
   mutate(alpha = purrr::map2_dbl(data, n, function(x, y) alpha.ml(as.matrix(x), weight = y))) %>%
-  mutate(aes_type = factor(aes_type, levels = aes_order, ordered = T)) %>%
   mutate(alpha_type = "null") %>%
-  mutate(n_total = purrr::map_dbl(n, sum))
+  mutate(n_total = purrr::map_dbl(n, sum)) %>%
+  ungroup() %>%
+  mutate(aes_type = factor(aes_type, levels = aes_order, ordered = T))
 
 t16_all_wide <- t16_res %>%
   select(pic_id, set_type, aes_type, response_no, weight) %>%
