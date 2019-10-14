@@ -353,10 +353,10 @@ BF(M_1, M_2) = &  \frac{\displaystyle\int_\theta p(\theta | \alpha_{M_1}) f(\bm{
                          {\displaystyle\int_\theta p(\theta | \alpha_{M_2}) f(\bm{c} | \bm\theta, \alpha_{M_2}) d\bm\theta} \nonumber\\
               =  &  \frac
               {\int\left(\frac{1}{B(\bm\alpha_1)} \prod_{i=1}^m \theta_i^{\alpha_1 - 1}\right)\left(\frac{\left(\sum_{i=1}^m c_i\right)!}{c_1!\times \cdots\times c_m!} \prod_{i=1}^m \theta_i^{x_i}\right) d\bm\theta}
-              {\int\left(\frac{1}{B(\bm\alpha_2)} \prod_{i=1}^m \theta_i^{\alpha_2 - 1}\right)\left(\frac{\left(\sum_{i=1}^m c_i\right)!}{c_1!\times \cdots\times c_m!} \prod_{i=1}^m \theta_i^{x_i}\right) d\bm\theta}\\
+              {\int\left(\frac{1}{B(\bm\alpha_2)} \prod_{i=1}^m \theta_i^{\alpha_2 - 1}\right)\left(\frac{\left(\sum_{i=1}^m c_i\right)!}{c_1!\times \cdots\times c_m!} \prod_{i=1}^m \theta_i^{x_i}\right) d\bm\theta}\nonumber\\
               =  & \frac{B(\bm\alpha_2)}{B(\bm\alpha_1)}
               \frac{\frac{\left(\sum_{i=1}^m c_i\right)!}{c_1!\times \cdots\times c_m!}}{\frac{\left(\sum_{i=1}^m c_i\right)!}{c_1!\times \cdots\times c_m!}}
-              \frac{\int \prod_{i=1}^m \theta_i^{\alpha_1 - 1 + c_i}d\bm\theta}{\int \prod_{i=1}^m \theta_i^{\alpha_2 - 1 + c_i}d\bm\theta}\\
+              \frac{\int \prod_{i=1}^m \theta_i^{\alpha_1 - 1 + c_i}d\bm\theta}{\int \prod_{i=1}^m \theta_i^{\alpha_2 - 1 + c_i}d\bm\theta}\nonumber\\
               = & \frac{B(\bm\alpha_2)B(\bm\alpha_1+\bm{c})}{B(\bm\alpha_1)B(\bm\alpha_2+\bm{c})}
 \end{align}
 
