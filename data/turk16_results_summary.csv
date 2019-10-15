@@ -10819,3 +10819,27 @@ NA,17,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,FALSE
 NA,18,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,FALSE
 NA,19,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,FALSE
 NA,20,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,FALSE
+3,NA,1,1,3,1,3,turk16-shape,k-3-sdline-0.25-sdgroup-0.25,line-0.87002-cluster-0.91041,"20, 11, 16",Images/Lineups/svgs/da6cd1abdc6284388efcbe1e41751651.svg,turk16,113,set-1-k-3-sdline-0.25-sdgroup-0.25,FALSE
+25,NA,1,3,5,3,3,turk16-colorEllipse,k-3-sdline-0.25-sdgroup-0.25,line-0.85791-cluster-0.92514,"14, 4, 16",Images/Lineups/svgs/fe6fc9871798861b9a20e2d07a473888.svg,turk16,115,set-3-k-3-sdline-0.25-sdgroup-0.25,FALSE
+106,NA,1,11,6,11,3,turk16-colorShapeEllipse,k-3-sdline-0.35-sdgroup-0.25,line-0.77731-cluster-0.91689,"18, 13, 10",Images/Lineups/svgs/2f2ef43ec3304be3a8ec9cef77afacd4.svg,turk16,126,set-11-k-3-sdline-0.35-sdgroup-0.25,FALSE
+134,NA,1,14,4,14,3,turk16-colorShape,k-3-sdline-0.35-sdgroup-0.30,line-0.78780-cluster-0.89472,"15, 19, 4",Images/Lineups/svgs/6aaca5fe2207bcfae70a132baee8b811.svg,turk16,154,set-14-k-3-sdline-0.35-sdgroup-0.30,FALSE
+141,NA,1,15,1,15,3,turk16-plain,k-3-sdline-0.35-sdgroup-0.30,line-0.77535-cluster-0.87485,"17, 8, 11",Images/Lineups/svgs/bb20abe8fb0b7b61102ff9d724afac52.svg,turk16,151,set-15-k-3-sdline-0.35-sdgroup-0.30,FALSE
+197,NA,1,20,7,20,3,turk16-trend,k-3-sdline-0.45-sdgroup-0.25,line-0.64057-cluster-0.90492,"1, 13, 20",Images/Lineups/svgs/05a67e2d7482b30a73b2c7427c52e1cc.svg,turk16,137,set-20-k-3-sdline-0.45-sdgroup-0.25,FALSE
+217,NA,1,22,7,22,3,turk16-trend,k-3-sdline-0.45-sdgroup-0.30,line-0.59653-cluster-0.89774,"11, 17, 7",Images/Lineups/svgs/0076ac6d078efb6edaa5f35a159ffb85.svg,turk16,167,set-22-k-3-sdline-0.45-sdgroup-0.30,FALSE
+221,NA,1,23,1,23,3,turk16-plain,k-3-sdline-0.45-sdgroup-0.30,line-0.62110-cluster-0.89470,"6, 1, 16",Images/Lineups/svgs/626245137ba49b63af5da64ad002e192.svg,turk16,161,set-23-k-3-sdline-0.45-sdgroup-0.30,FALSE
+236,NA,1,24,6,24,3,turk16-colorShapeEllipse,k-3-sdline-0.45-sdgroup-0.30,line-0.65094-cluster-0.88871,"2, 3, 13",Images/Lineups/svgs/864201d7bb5eae98c4bac20d47d1189e.svg,turk16,166,set-24-k-3-sdline-0.45-sdgroup-0.30,FALSE
+239,NA,1,24,9,24,3,turk16-colorTrend,k-3-sdline-0.45-sdgroup-0.30,line-0.65094-cluster-0.88871,"2, 3, 13",Images/Lineups/svgs/ec81aacba485079e68fa29fd86c6f4ce.svg,turk16,169,set-24-k-3-sdline-0.45-sdgroup-0.30,FALSE
+277,NA,1,28,7,28,5,turk16-trend,k-5-sdline-0.25-sdgroup-0.25,line-0.85055-cluster-0.92897,"7, 13, 8",Images/Lineups/svgs/83a63c9a59f6499ccb5038b2cd4c44fb.svg,turk16,247,set-28-k-5-sdline-0.25-sdgroup-0.25,FALSE
+288,NA,1,29,8,29,5,turk16-trendError,k-5-sdline-0.25-sdgroup-0.25,line-0.84731-cluster-0.92760,"18, 14, 5",Images/Lineups/svgs/1ce35d129aae642997af67a8f873b7a2.svg,turk16,248,set-29-k-5-sdline-0.25-sdgroup-0.25,FALSE
+295,NA,1,30,5,30,5,turk16-colorEllipse,k-5-sdline-0.25-sdgroup-0.25,line-0.84122-cluster-0.93358,"18, 12, 7",Images/Lineups/svgs/2d496f968eb40521ad16366707c36114.svg,turk16,245,set-30-k-5-sdline-0.25-sdgroup-0.25,FALSE
+296,NA,1,30,6,30,5,turk16-colorShapeEllipse,k-5-sdline-0.25-sdgroup-0.25,line-0.84122-cluster-0.93358,"18, 12, 7",Images/Lineups/svgs/70b037331a25bafff495642dd492c984.svg,turk16,246,set-30-k-5-sdline-0.25-sdgroup-0.25,FALSE
+316,NA,1,32,6,32,5,turk16-colorShapeEllipse,k-5-sdline-0.25-sdgroup-0.20,line-0.86499-cluster-0.95708,"5, 18, 14",Images/Lineups/svgs/35d3d745d5841bbe7aa0b08bcb485a75.svg,turk16,216,set-32-k-5-sdline-0.25-sdgroup-0.20,FALSE
+329,NA,1,33,9,33,5,turk16-colorTrend,k-5-sdline-0.25-sdgroup-0.20,line-0.84749-cluster-0.94890,"16, 18, 14",Images/Lineups/svgs/b5791967be48b45b565a1bcae4147a79.svg,turk16,219,set-33-k-5-sdline-0.25-sdgroup-0.20,FALSE
+339,NA,1,34,9,34,5,turk16-colorTrend,k-5-sdline-0.25-sdgroup-0.30,line-0.86359-cluster-0.90191,"3, 6, 16",Images/Lineups/svgs/d114ce6b1214c4e67f61dcb2925404ac.svg,turk16,279,set-34-k-5-sdline-0.25-sdgroup-0.30,FALSE
+375,NA,1,38,5,38,5,turk16-colorEllipse,k-5-sdline-0.35-sdgroup-0.25,line-0.70720-cluster-0.93803,"15, 1, 8",Images/Lineups/svgs/eb97524a751fb4f150a93367bdd83dcc.svg,turk16,255,set-38-k-5-sdline-0.35-sdgroup-0.25,FALSE
+376,NA,1,38,6,38,5,turk16-colorShapeEllipse,k-5-sdline-0.35-sdgroup-0.25,line-0.70720-cluster-0.93803,"15, 1, 8",Images/Lineups/svgs/861eb4e535c43f49c7981a57a31ec1a7.svg,turk16,256,set-38-k-5-sdline-0.35-sdgroup-0.25,FALSE
+386,NA,1,39,6,39,5,turk16-colorShapeEllipse,k-5-sdline-0.35-sdgroup-0.25,line-0.75524-cluster-0.92638,"19, 5, 1",Images/Lineups/svgs/b5feb1c01aaed5721f735ff6e6867766.svg,turk16,256,set-39-k-5-sdline-0.35-sdgroup-0.25,FALSE
+454,NA,1,46,4,46,5,turk16-colorShape,k-5-sdline-0.45-sdgroup-0.25,line-0.67696-cluster-0.92001,"4, 19, 9",Images/Lineups/svgs/5a369e94292bb49c2c381d569b2997a5.svg,turk16,264,set-46-k-5-sdline-0.45-sdgroup-0.25,FALSE
+481,NA,1,49,1,49,5,turk16-plain,k-5-sdline-0.45-sdgroup-0.20,line-0.61602-cluster-0.95639,"17, 4, 3",Images/Lineups/svgs/2e3390dd05e967af9acb26442a7f44d5.svg,turk16,231,set-49-k-5-sdline-0.45-sdgroup-0.20,FALSE
+529,NA,1,53,9,53,5,turk16-colorTrend,k-5-sdline-0.45-sdgroup-0.30,line-0.65530-cluster-0.89785,"14, 11, 11",Images/Lineups/svgs/38b36f9bbb9db08d7921914f8921935c.svg,turk16,299,set-53-k-5-sdline-0.45-sdgroup-0.30,FALSE
+NA,NA,12,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,FALSE
