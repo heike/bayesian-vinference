@@ -105,7 +105,7 @@ vis_p_value <- function(C, K, alpha = 1, m = 20){
                kk = K,
                aa = alpha,
                mm = m) %>%
-    unnest() %>%
+    unnest(everything()) %>%
     mutate(p = purrr::pmap_dbl(., single_p))
   df$p
 }
@@ -118,7 +118,7 @@ vis_p_value_orig <- function(C, K, m = 20){
   df <- tibble(cc = C,
                kk = K,
                mm = m) %>%
-    unnest() %>%
+    unnest(everything()) %>%
     mutate(p = purrr::pmap_dbl(., single_p))
   df$p
 }
@@ -335,15 +335,15 @@ As a result, when presented with a lineup, we will typically gravitate towards o
 Note that even though the interesting null plot effect is found in all scenarios proposed in \autoref{sec:scenarios}, it is not a systematic issue in Scenario 1; in Scenario 3, the null plots are not re-generated with each lineup evaluation, so an interesting null plot selected by one individual may also effect the evaluation of by other individuals.
 That is, in Scenario 3, the interesting null plots affect all evaluations, and this effect can significantly affect the experiment results.
 However, in Scenario 3, we can also estimate the size of this effect: by examining repeated evaluations of a lineup, we can leverage that replication to estimate the distinctiveness of the set of null plots in the lineup.
-While this effect may exist in Scenario 1, we cannot estimate the effect because there are not repeated evaluations of the same set of lineups. Thus, in Scenario 1, the best estimate we can make for the generic $\theta$ is $1/m$, which is equivalent to the Multinomial model without the Dirichlet hyperparameter. As $\alpha \rightarrow \infty$, the Multinomial-Dirichlet model approaches the Multinomial model with no hyperparameter.\svp{May need to actually prove this to myself, ugh.}
+While this effect may exist in Scenario 1, we cannot estimate the effect because there are not repeated evaluations of the same set of lineups. Thus, in Scenario 1, the best estimate we can make for the generic $\theta$ is $1/m$, which is equivalent to the Multinomial model without the Dirichlet hyperparameter and with $\theta = 1/m$.
 
 In the theoretical Multinomial-Dirichlet model proposed in this paper, the number of panels which could be expected to be visually different in a generalized lineup is a function of $\alpha$, the hyperparameter in \autoref{eqn:dirichlet-pdf} and \autoref{eqn:full-model-specification}.
 In practice, we would create a null plot generating model first, and set $\alpha$ according to the perceived difficulty of lineup evaluation using the null generating model in question.
 A difficult lineup, with many potentially interesting panels, would have a higher $\alpha$ value than an easy lineup with no null panels which were visually salient relative to the data panel.
 
-Under the frequentist paradigm, $\alpha$ plays a similar role in modulating the visual p-value calculated from \autoref{eqn:sim-pmf}: lower $\alpha$ values produce a higher visual p-value estimate, and higher $\alpha$ values produce a lower visual p-value estimate.
+$\alpha$ plays a similar role in modulating the visual p-value calculated from \autoref{eqn:sim-pmf}: lower $\alpha$ values produce a higher visual p-value estimate, and higher $\alpha$ values produce a lower visual p-value estimate.
 
-<<vis-p-val-sensitivity-initial, fig.cap = "Sensitivity of visual p-value to selection of $\\alpha$ under the beta-binomial model. Corresponding values for the binomial model are shown on the right side of the plot; as $\\alpha \\rightarrow\\infty$, the beta-binomial p-value converges to the binomial model p-value.", fig.width = 8, fig.height = 5, out.width = "\\textwidth">>=
+<<vis-p-val-sensitivity-initial, fig.cap = "Sensitivity of visual p-value to selection of $\\alpha$ under the beta-binomial model. Corresponding values for the binomial model are shown on the right side of the plot; as $\\alpha \\rightarrow\\infty$, the beta-binomial p-values converge to the binomial model p-value.", fig.width = 8, fig.height = 5, out.width = "\\textwidth">>=
 alphas <- exp(seq(-6, 6, by = .01))
 data_breaks <- c(1:5, 6, 8, 10, 15, 20)
 
@@ -368,16 +368,16 @@ ggplot(pv, aes(x = alpha, y = p, color = factor(C), group = factor(C))) +
            label = "Binomial\nmodel", vjust = 1, hjust = .75) +
   annotate("segment", x = 1, xend = 1, y = -Inf, yend = .7, color = "grey", alpha = .5) +
   annotate("text", x = 1, y = 0.75,
-           label = "Beta-Binomial\nmodel", vjust = 1, hjust = .75) +
+           label = "vinference\npackage", vjust = 1, hjust = .5) +
   theme_bw()
 @
 
-Clearly, the choice of $\alpha$ is critical under both the frequentist and Bayesian model paradigms. From a practical perspective, the number of plots which are visually salient and thus likely to be selected by participants is a factor of the lineup design (zero, one, or two targets), null plot generation method, and possibly the form of the plot (aesthetics, geometric representations, scales). While the prior predictive distributions in \autoref{fig:prior-predictive} are illustrative, in practice, we do not have a particularly good instinct for what a reasonable value of $\alpha$ would be for a particular lineup generation method. In the next section, we derive a method for estimating $\alpha$ from Rorshach or standard lineups and discuss possible uses for this method in assessing null plot generation and lineup difficulty.
+Clearly, the choice of $\alpha$ is critical. From a practical perspective, the number of plots which are visually salient and thus likely to be selected by participants is a factor of the lineup design (zero, one, or two targets), null plot generation method, and possibly the form of the plot (aesthetics, geometric representations, scales). While the prior predictive distributions in \autoref{fig:prior-predictive} are illustrative, in practice, we do not usually have a good instinct for what a reasonable value of $\alpha$ would be for a particular lineup generation method. In the next section, we present a method for estimating $\alpha$ from Rorshach or standard lineups and discuss possible uses for this method in assessing null plot generation and lineup difficulty.
 
 \section[Estimating alpha]{Estimating $\alpha$}
 \subsection{Derivation of MLE for $\alpha$}
 % modified from heike/lineup-scenarios
-In order to estimate $\alpha$ from the null plots of a lineup, let $m_0$ be the number of null plots in an $m$- panel lineup. If the lineup is a Rorshach lineup, then $m=m_0$. We can estimate $\alpha$ using a set of such lineups, $j=1, ..., n$. The likelihood function is then
+In order to estimate $\alpha$ from the null plots of a lineup, let $m_0$ be the number of null plots in an $m$- panel lineup. If the lineup is a Rorshach lineup, then $m=m_0$. We can estimate $\alpha$ using a set of such lineups, $j=1, ..., n$, where the lineups in the set were generated under the same distribution. The likelihood function is then
 \begin{align}
 \mathscr{L}(\alpha|\theta) &= \prod_{j=1}^n \left(\frac{1}{B(\alpha)}\right)^{m_0} \prod_{i=1}^{m_0} \theta_{ij}^{\alpha - 1}\nonumber\\
 & = \left(\frac{\Gamma(\alpha m_0)}{\left(\Gamma(\alpha)\right)^{m_0}}\right)^n \prod_{ij} \theta^{\alpha-1}_{ij}
@@ -404,16 +404,16 @@ The second derivative of the log likelihood function uses the trigamma function,
 & = nm_0^2\sum_{x=0}^\infty \frac{m_0(\alpha + x)^2 - (m_0\alpha + x)^2}{m_0(\alpha m_0 + 1)^2(\alpha + x)^2}\leq 0 \text{ for } m_0 \geq 1, \alpha > 0 \nonumber\\
 & \hphantom{=} \text{ as } m_0(\alpha+x)^2 \leq (\alpha m_0 + x)^2 \text{ for } m_0 \geq 1, \alpha > 0\nonumber
 \end{align}
-The empirical solution to \autoref{eqn:mle} is thus a local maximum.
+The empirical solution to \autoref{eqn:mle} is thus a local maximum, and the MLE of $\alpha$ is the numerical solution to the equation \autoref{eqn:mle}.
 
-\todo{Probably need to derive the std error... but that's likely to be trickier with the empirical solution? Need to check 601 notes or something. That's going to get more complicated if we show the weighted version... fml. I've only done all of this derivation for the simple unweighted version.}
+
+% \todo{Probably need to derive the std error... but that's likely to be trickier with the empirical solution? Need to check 601 notes or something. That's going to get more complicated if we show the weighted version... fml. I've only done all of this derivation for the simple unweighted version.}
 % stolen from heike/lineup-scenarios
 <<alpha-ml, include = F>>=
 source("code/alpha_ml.R")
 @
 
 % end stolen from heike/lineups scenarios
-Thus, the MLE of $\alpha$ is the numerical solution to the equation \autoref{eqn:mle}.
 
 \subsection{Pooling null evaluations}
 The MLE for $\alpha$ in \autoref{eqn:mle} allows for the combination of evaluations of multiple sets of null plots (either from Rorshach lineups or lineups with one or more target panels), but in order for this combination of data to be meaningful, the following conditions should hold:
@@ -423,7 +423,7 @@ The MLE for $\alpha$ in \autoref{eqn:mle} allows for the combination of evaluati
 \item Selection method should be the same (e.g. single or multiple target plots)
 \end{enumerate}
 
-When estimating $\hat\alpha$ from null plot selections in a standard lineup (e.g. a lineup containing at least one target plot), there is the possibility that no null plots are selected. If this is a frequent occurrence, it may be necessary to pool across aesthetics or null model parameter sets in order to obtain reasonable $\hat\alpha$s. A more reliable and systematic way to estimate $\hat\alpha$ would be to include a Rorshach lineup for each set of parameters used to generate null plots. These Rorshach lineups could be integrated into the testing procedure, or could be part of a pilot study used to assess the null plot generating model before it is used in lineups with data targets.
+When estimating $\hat\alpha$ from null plot selections in a standard lineup (e.g. a lineup containing at least one target plot), there is the possibility that no null plots are selected. A more reliable and systematic way to estimate $\hat\alpha$ would be to include a Rorshach lineup for each set of parameters used to generate null plots. These Rorshach lineups may be integrated into the testing procedure, or may be part of a pilot study used to assess the null plot generating model before it is used in lineups with data targets.
 
 % \todo{default of ?? if no null plots are selected.} \svp{I know we talked about the default, I just don't remember what it was... as sum(log theta) -> - infinity, alpha -> 0 from what I can tell empirically. }
 
@@ -450,12 +450,47 @@ plot_df %>%
 \begin{figure}
 \centering
 \includegraphics[width=.6\textwidth]{lineup-images/turk11-filec2a72fe67dcf-multiple.pdf}
-\caption{A lineup from Study 5. The target plot is in panel 7+7. Only one participant identified the target plot in 24 lineup evaluations. A total of 15 panels in this lineup were selected, indicating that the $\hat\alpha$ associated with this plot should be relatively large.}\label{fig:hard-lineup}
+\caption{A lineup from Study 5. The target plot is in panel 7+7. Only one participant identified the target plot in 24 lineup evaluations. A total of 15 panels in this lineup were selected, indicating that the $\hat\alpha$ associated with this plot should be relatively large; in fact, $\hat\alpha =  $\Sexpr{round(alpha.ml(filter(studies_sum, study == "turk11" & str_detect(pic_name, "filec2a72fe67dcf-multiple"), obs_plot_location != response_no)$n), 4)}.}\label{fig:hard-lineup}
 \end{figure}
 
 The estimated $\hat\alpha$ value can then be used either in the specification of the null model $\alpha$ ($\alpha_{M_2}$) or in the calculation of the visual p-value under the frequentist framework. Currently, in either scenario, the data used in the calculation are the target plot identifications and the sum of all null plot identifications; the individual values of the null plot identifications are not used. These data can be reclaimed to estimate a general $\alpha$ for the overall null model generation scheme, or, in an ideal situation, Rorshach lineups could be used to estimate $\alpha$ directly without any possible contamination effects induced by the presence of target plots.
 
-\section{Impact of $\hat\alpha$ Selection}
+\section{Impact of $\hat\alpha$ Estimation}
+We have already established that the choice of $\alpha$ has a large impact on the visual p-value (\autoref{fig:vis-p-val-sensitivity-initial}), but if we use the estimation method described in the last section, how do the results change in practice? Here, we show 3 different lineups - nonsignificant, marginal, and highly significant, and examine the visual p-values computed under the binomial distribution, the \texttt{vinference} package (with default parameter $\alpha = 1$), and with the $\alpha$ estimated from the experiment which originally included the lineup in question.
+
+<<turk13-alpha-setup, include = F>>=
+lineup_res <- filter(studies_sum, study == "turk13", str_detect(pic_name, "filebab6558ba4c4-multiple"))
+alpha_val <- lineup_res %>%
+  select(study, param_value, test_param) %>%
+  unique() %>%
+  left_join(studies_alpha_est)
+alpha_val <- alpha_val$alpha
+
+target_sel <- filter(lineup_res, obs_plot_location == response_no)$n
+K <- sum(lineup_res$n)
+
+ps <- c(
+  dbinom(target_sel, K, 1/20),
+  vinference::dVsim(target_sel, K, scenario = 3)$scenario3,
+  # vis_p_value_orig(target_sel, K),
+  vis_p_value(target_sel, K, alpha_val)
+) %>%
+  round(4)
+@
+<<turk13-lineup, fig.cap = sprintf("A lineup from \\citet{loyAreYouNormal2015} which was evaluated a total of %d times. Number of selections $c_i$ are shown at the top left of each panel.", sum(counts_turk13$n)), fig.width = 6, fig.height = 6/5*4.5, fig.align='center', out.width = ".66\\textwidth">>=
+
+
+  t13plot_data %>%
+  ggplot() +
+  geom_ribbon(aes(x = naive1.env.fit.value, ymin = naive1.env.lower, ymax = naive1.env.upper), alpha = .1) +
+  geom_point(aes(x = naive1.qq.x, y = naive1.qq.y)) +
+  geom_abline(aes(slope = 1, intercept = 0), color = "grey30") +
+  geom_text(aes(x = -Inf, y = Inf, label = sprintf("c[%d] == %.0f", .sample_inner, n)),
+            hjust = -0.2, vjust = 1, parse = T, data = counts_turk13, inherit.aes = F) +
+  facet_wrap(~.sample_inner) +
+  theme(axis.text = element_blank(), axis.title = element_blank(), axis.ticks = element_blank())
+@
+
 
 Return to the 3 lineups shown in Bayes Factor section, provide estimated alphas and visual p-values for each plot.
 
