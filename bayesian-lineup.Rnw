@@ -129,11 +129,22 @@ source("code/process_all_lineup_data.R")
 @
 
 <<lineup-bf-data-setup, cache = F, include = F, warning = F>>=
+# t10plot_data <- read_csv("data/Turk10/data/data-1-1-9-20-10-13-20.csv")
+#
+# counts_turk10 <- studies_sum %>%
+#   ungroup() %>%
+#   filter(study == "turk10" & pic_name == "filebab65bda535f-multiple.svg") %>%
+#   group_by(study, response_no) %>%
+#   summarize(n = sum(n))%>%
+#   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
+#   mutate(.sample_inner = response_no)
+#
+#
 # t13plot_data <- read_csv("data/Turk13/lineups/data/data-1-1-1-20-2-14-5.csv")
 #
 # counts_turk13 <- studies_sum %>%
 #   ungroup() %>%
-#   filter(study == "turk13" & pic_id <=2) %>%
+#   filter(study == "turk13" & pic_id == 142) %>%
 #   group_by(study, response_no) %>%
 #   summarize(n = sum(n))%>%
 #   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
@@ -172,7 +183,7 @@ source("code/process_all_lineup_data.R")
 #   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
 #   mutate(.sample = response_no)
 #
-# save(counts_t6_ambig, t6_ambig_data, t13plot_data, counts_turk13, t6_sig_data, counts_t6_sig, file = "data/turk6_13_examples.Rdata")
+# save(counts_t6_ambig, t6_ambig_data, t10plot_data, counts_turk10, t13plot_data, counts_turk13, t6_sig_data, counts_t6_sig, file = "data/turk6_13_examples.Rdata")
 load("data/turk6_13_examples.Rdata")
 @
 
@@ -198,7 +209,7 @@ Typically, graphical tests utilize a service like Amazon Mechanical Turk to acqu
 
 While visual inference was initially developed to mimic frequentist hypothesis tests, using lineups of 20 plots with one data plot, so that the probability of selecting the data plot randomly is $p=0.05$, visual inference itself does not demand use of frequentist techniques. In this paper, we develop one possible framework for visual inference, using a Bayesian framework with a Dirichlet-multinomial distribution to model the probabilities of selecting each panel and a Multinomial distribution to model the observed participant selections. This framework for analysis of visual inference data has been in use as part of the \texttt{vinference} package~\citep{vinference} for several years \citep{loyAreYouNormal2015,loy2016variations,vanderplas:2017}, but has not been formally described in any publication. Here, we provide the mathematical foundation for the multinomial-dirichlet model used in the analysis of visual inference experiments, exploring the implications of the model and proposing a modification which better describes the perceptual process of lineup evaluation.
 
-\section{Lineup Evaluations}\label{sec:scenarios}
+\subsection{Lineup Evaluations}\label{sec:scenarios}
 % Types of lineups
 \citet{buja:2009} introduced two types of lineups: Rorshach lineups, which contain only null plots, and standard one-target lineups, which contain $m$ panels, $m-1$ of which are null plots, and one which shows the real data. \citet{vanderplas:2017} introduced another type of lineup: the two-target lineup. This lineup contains target plots generated from two competing data generating models, with null plots that are generated from a mixture of the two target plot distributions. Two-target lineups can be used to test whether two competing effects have different visual salience. All of the lineup experiments the authors are aware of at this time are one or two-target lineup experiments.
 
@@ -261,7 +272,7 @@ Examining the parameters of either the full or marginal model specifications in 
 
 In addition to the pseudo-observation interpretation, $\alpha$ provides information about the number of panels in a lineup which are likely to attract participant interest. It is useful to detour slightly from the discussion of visual inference to explore the impact and interpretation(s) of $\alpha$ in the context of statistical lineups.
 
-\section{Dirichlet Hyperparameter}\label{sec:alpha}
+\subsection{Dirichlet Hyperparameter}\label{sec:alpha}
 % Stolen from heike/lineup-scenarios
 When $\alpha = 1$, the symmetric Dirichlet distribution is uniform on the $m-1$ dimensional simplex. When $\alpha < 1$, the mass of the distribution is along the edges of the simplex, where most values of $\theta_i$ will be close to 0. When $\alpha>1$, the mass of the distribution is in the center of the simplex, with most of the $\theta_i$ having similar values. \autoref{fig:simplex} shows ternary plots~\citep{ggtern} of values simulated from a 3-dimensional Dirichlet distribution which illustrate the effect of $\alpha$ on the sampled $\bm\theta$.
 
@@ -320,12 +331,12 @@ ggplot(prior_pred) +
 % A modification of the frequentist paradigm developed in \citet{majumder2013validation} and released as a technical report \todo{get citation!} simulates p-values from a Dirichlet-Multinomial distribution with $\alpha=1$; based on the prior predictive distributions alone, $\alpha=1$ does not appear to fit the observed data or theoretical process (e.g. the tendency to identify even small differences from among similar things) well.
 
 The data model used in \citet{majumder2013validation} assumes $\theta_t = 1/m$, that is, $\theta_t$ is fixed and equal to the selection probability of every other panel in the lineup. This assumption, which would correspond to infinite $\alpha$, does not match our experience when evaluating a lineup, nor the accumulated experimental evidence (assembled under Scenario 3, as discussed in \autoref{sec:scenarios}) which shows that even null plots do not show equal selection probabilities for each panel. When examining a lineup, we are generally drawn immediately to 1-4 panels, and the remaining evaluation is to decide between those panels; we also know that typically the same panels are selected across multiple individuals. To account for this issue, recent analyses of lineups calculate visual p-values using the mass function
-\begin{align}
-P(C\geq x) = \sum_{x = C}^{K} \binom{K}{x} \frac{1}{B(\alpha, (m-1)\alpha)}\cdot B(x+\alpha, K-x+(m-1)\alpha)\label{eqn:sim-pmf}
+\begin{align}\label{eqn:beta-binomial}
+P(C\geq x) = \sum_{x = C}^{K} \binom{K}{x} \frac{1}{B(\alpha, (m-1)\alpha)}\cdot B(x+\alpha, K-x+(m-1)\alpha)
 \end{align}
-where $C$ is the number of data panel detections and $K$ is the number of independent evaluations of the lineup~\citep{vinference,vanderplas:2017,loyAreYouNormal2015}. The \texttt{vinference} package calculated visual p-values by simulating draws of $\theta$ from a uniform distribution (which corresponds to an assumption that $\alpha=1$) but the more general solution is useful to consider, as we may not actually believe $\theta$ is uniformly distributed over the $(m - 1)$ simplex.
+where $C$ is the number of data panel detections and $K$ is the number of independent evaluations of the lineup~\citep{vinference,vanderplas:2017,loyAreYouNormal2015}. A similar method is found in the \texttt{vinference} package, which calculates visual p-values by simulating draws of $\theta$ from a uniform distribution (which corresponds to an assumption that $\alpha=1$) but the more general solution is useful to consider, as we may not actually believe $\theta$ is uniformly distributed over the $(m - 1)$ simplex.
 
-\section{Hyperparameter Selection}
+\subsection{Hyperparameter Selection}
 % As a result, it's important to understand the effect of $\alpha$ on the posterior distribution.
 
 We know from experience as well as cognitive principles that it is unreasonable to assume that the selection probability of every null plot is precisely equal: null plots are randomly generated, and occasionally, the randomly generated plot will have an interesting feature (that may or may not be present in the target plot).
@@ -341,7 +352,7 @@ In the theoretical Multinomial-Dirichlet model proposed in this paper, the numbe
 In practice, we would create a null plot generating model first, and set $\alpha$ according to the perceived difficulty of lineup evaluation using the null generating model in question.
 A difficult lineup, with many potentially interesting panels, would have a higher $\alpha$ value than an easy lineup with no null panels which were visually salient relative to the data panel.
 
-$\alpha$ plays a similar role in modulating the visual p-value calculated from \autoref{eqn:sim-pmf}: lower $\alpha$ values produce a higher visual p-value estimate, and higher $\alpha$ values produce a lower visual p-value estimate.
+$\alpha$ plays a similar role in modulating the visual p-value calculated from \autoref{eqn:beta-binomial}: lower $\alpha$ values produce a higher visual p-value estimate, and higher $\alpha$ values produce a lower visual p-value estimate.
 
 <<vis-p-val-sensitivity-initial, fig.cap = "Sensitivity of visual p-value to selection of $\\alpha$ under the beta-binomial model. Corresponding values for the binomial model are shown on the right side of the plot; as $\\alpha \\rightarrow\\infty$, the beta-binomial p-values converge to the binomial model p-value.", fig.width = 8, fig.height = 5, out.width = "\\textwidth">>=
 alphas <- exp(seq(-6, 6, by = .01))
@@ -456,37 +467,26 @@ plot_df %>%
 The estimated $\hat\alpha$ value can then be used either in the specification of the null model $\alpha$ ($\alpha_{M_2}$) or in the calculation of the visual p-value under the frequentist framework. Currently, in either scenario, the data used in the calculation are the target plot identifications and the sum of all null plot identifications; the individual values of the null plot identifications are not used. These data can be reclaimed to estimate a general $\alpha$ for the overall null model generation scheme, or, in an ideal situation, Rorshach lineups could be used to estimate $\alpha$ directly without any possible contamination effects induced by the presence of target plots.
 
 \section{Impact of $\hat\alpha$ Estimation}
-We have already established that the choice of $\alpha$ has a large impact on the visual p-value (\autoref{fig:vis-p-val-sensitivity-initial}), but if we use the estimation method described in the last section, how do the results change in practice? Here, we show 3 different lineups - nonsignificant, marginal, and highly significant, and examine the visual p-values computed under the binomial distribution, the \texttt{vinference} package (with default parameter $\alpha = 1$), and with the $\alpha$ estimated from the experiment which originally included the lineup in question.
+We have already established that the choice of $\alpha$ has a large impact on the visual p-value (\autoref{fig:vis-p-val-sensitivity-initial}), but if we use the estimation method described in the last section, how do the results change in practice? Here, we show 3 different lineups - nonsignificant, marginal, and highly significant, and examine the visual p-values computed under the binomial distribution, by simulation using the \texttt{vinference} package (with default parameter $\alpha = 1$), and according to the beta-binomial model  in \autoref{eqn:beta-binomial} with $\alpha = 1$, and finally with $\alpha = \hat\alpha$ estimated from null plot selections in the experiment which originally included the lineup in question.
 
-<<turk13-alpha-setup, include = F>>=
-lineup_res <- filter(studies_sum, study == "turk13", str_detect(pic_name, "filebab6558ba4c4-multiple"))
-alpha_val <- lineup_res %>%
-  select(study, param_value, test_param) %>%
-  unique() %>%
-  left_join(studies_alpha_est)
-alpha_val <- alpha_val$alpha
+\autoref{fig:turk10-lineup} shows a plot which
 
-target_sel <- filter(lineup_res, obs_plot_location == response_no)$n
-K <- sum(lineup_res$n)
+<<turk10-alpha-setup, include = F>>=
+# source("code/compute_all_ps.R")
 
-ps <- c(
-  dbinom(target_sel, K, 1/20),
-  vinference::dVsim(target_sel, K, scenario = 3)$scenario3,
-  # vis_p_value_orig(target_sel, K),
-  vis_p_value(target_sel, K, alpha_val)
-) %>%
-  round(4)
+load("data/all_p_values_computed.Rdata")
+
+lineup_res <- filter(all_p_val_methods, study == "turk10", str_detect(pic_name, "filebab65bda535f-multiple"))$p_calc[[1]]
 @
-<<turk13-lineup, fig.cap = sprintf("A lineup from \\citet{loyAreYouNormal2015} which was evaluated a total of %d times. Number of selections $c_i$ are shown at the top left of each panel.", sum(counts_turk13$n)), fig.width = 6, fig.height = 6/5*4.5, fig.align='center', out.width = ".66\\textwidth">>=
 
-
-  t13plot_data %>%
+<<turk10-lineup, fig.cap = sprintf("A lineup from \\citet{loyAreYouNormal2015} which was evaluated a total of %d times. Number of selections $c_i$ are shown at the top left of each panel. The binomial p-value for this model is %0.4f, the simulated vinference p-value is %0.4f, the multinomial p-value with $\\alpha = 1$ is %0.4f, and the multinomial p-value with $\\hat\\alpha = %0.4f$ is %0.4f", sum(counts_turk13$n), lineup_res[1], lineup_res[2], lineup_res[3], filter(all_p_val_methods, study == "turk10", str_detect(pic_name, "filebab65bda535f-multiple"))$alpha, lineup_res[4]), fig.width = 6, fig.height = 6/5*4.5, fig.align='center', out.width = ".66\\textwidth">>=
+t10plot_data %>%
   ggplot() +
-  geom_ribbon(aes(x = naive1.env.fit.value, ymin = naive1.env.lower, ymax = naive1.env.upper), alpha = .1) +
+  # geom_ribbon(aes(x = naive1.env.fit.value, ymin = naive1.env.lower, ymax = naive1.env.upper), alpha = .1) +
   geom_point(aes(x = naive1.qq.x, y = naive1.qq.y)) +
   geom_abline(aes(slope = 1, intercept = 0), color = "grey30") +
   geom_text(aes(x = -Inf, y = Inf, label = sprintf("c[%d] == %.0f", .sample_inner, n)),
-            hjust = -0.2, vjust = 1, parse = T, data = counts_turk13, inherit.aes = F) +
+            hjust = -0.2, vjust = 1, parse = T, data = counts_turk10, inherit.aes = F) +
   facet_wrap(~.sample_inner) +
   theme(axis.text = element_blank(), axis.title = element_blank(), axis.ticks = element_blank())
 @
