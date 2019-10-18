@@ -35,27 +35,16 @@ vis_p_value <- function(C, K, alpha = 1, m = 20){
     mutate(p = purrr::pmap_dbl(., single_p))
   df$p
 }
-vis_p_value_orig <- function(C, K, m = 20){
-  single_p <- function(cc, kk, aa, mm) {
-    x <- cc:kk
-    sum(exp(lchoose(kk, x) - x*log(mm) + (kk-x)*log(1-1/mm)))
-  }
-
-  df <- tibble(cc = C,
-               kk = K,
-               mm = m) %>%
-    unnest(everything()) %>%
-    mutate(p = purrr::pmap_dbl(., single_p))
-  df$p
-}
 
 get_all_ps <- function(data, alpha) {
   n_target <- filter(data, obs_plot_location == response_no)$n
   n_total <- sum(data$n)
 
-  list(binomial = pbinom(n_target, size = n_total, prob = 1/20, lower.tail = F),
-    vinference_sim = vinference::pVsim(n_target, n_total, N = 5000, scenario = 3),
-    multinomial_a_1 = vis_p_value_orig(C = n_target, K = n_total),
+  tmp <- vinference::pVsim(n_target, n_total, N = 5000, scenario = 3)
+  tibble(binomial = pbinom(n_target, size = n_total, prob = 1/20, lower.tail = F),
+    vinf_sim = tmp[2],
+    vinf_binom = tmp[3],
+    multinomial_a_1 = vis_p_value(C = n_target, K = n_total),
     multinomial_a_est = vis_p_value(C = n_target, K = n_total, alpha = alpha))
 }
 
@@ -67,3 +56,16 @@ all_p_val_methods <- studies_sum %>%
 all_p_val_methods <- all_p_val_methods %>%
   mutate(p_calc = furrr::future_map2(data, alpha, get_all_ps))
 save(all_p_val_methods, file = "data/all_p_values_computed.Rdata")
+
+
+
+load("data/all_p_values_computed.Rdata")
+all_p_val_methods <- all_p_val_methods %>%
+  unnest_wider(p_calc)
+
+all_p_val_long <- all_p_val_methods %>%
+  pivot_longer(cols = binomial:multinomial_a_est, names_to = "method", values_to = "p") %>%
+  mutate(method = factor(method, levels = c("binomial", "vinf_binom", "vinf_sim", "multinomial_a_1", "multinomial_a_est")))
+
+ggplot(all_p_val_long, aes(x = method, y = p, group = pic_name)) +
+  geom_line(alpha = .2)
