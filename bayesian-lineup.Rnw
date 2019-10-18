@@ -77,114 +77,12 @@ knitr::opts_chunk$set(echo = F, message = F, warning = F)
 # theme_set(theme_bw())
 @
 
-<<bf-code, include = F>>=
-mvbeta <- function(alpha, log = F) {
-  z <- sum(lgamma(alpha)) - lgamma(sum(alpha))
-  if (!log) return(exp(z)) else return(z)
-}
-
-bf <- function(a1, a2, m = 20, c, k = sum(c)) {
-  stopifnot(a1 > 0, a2 > 0, c <= k, m > 1)
-
-  beta(a2, (m - 1)*a2) * beta(c + a1, k - c + (m - 1)*a1) /
-    (beta(a1, (m - 1)*a1) * beta(c + a2, k - c + (m - 1)*a2))
-}
-bf_vec <- function(a1, a2, m = 20, c, k = sum(c)) {
-  stopifnot(a1 > 0, a2 > 0, c <= k, m > 1)
-
- exp(mvbeta(rep(a2, length(c)), log = T) + mvbeta(a1 + c, log = T) -
-   mvbeta(rep(a1, length(c)), log = T) - mvbeta(a2 + c, log = T))
-}
-vis_p_value <- function(C, K, alpha = 1, m = 20){
-  single_p <- function(cc, kk, aa, mm) {
-    x <- cc:kk
-    sum(exp(lchoose(kk, x) - lbeta(aa, (mm - 1) * aa) + lbeta(x + aa, kk - x + (mm - 1) * aa)))
-  }
-
-  df <- tibble(cc = C,
-               kk = K,
-               aa = alpha,
-               mm = m) %>%
-    unnest(everything()) %>%
-    mutate(p = purrr::pmap_dbl(., single_p))
-  df$p
-}
-vis_p_value_orig <- function(C, K, m = 20){
-  single_p <- function(cc, kk, aa, mm) {
-    x <- cc:kk
-    sum(exp(lchoose(kk, x) - x*log(mm) + (kk-x)*log(1-1/mm)))
-  }
-
-  df <- tibble(cc = C,
-               kk = K,
-               mm = m) %>%
-    unnest(everything()) %>%
-    mutate(p = purrr::pmap_dbl(., single_p))
-  df$p
-}
+<<code, include = F>>=
+source("code/functions.R")
 @
 
 <<turk-studies-data,  include = F>>=
 source("code/process_all_lineup_data.R")
-@
-
-<<lineup-bf-data-setup, cache = F, include = F, warning = F>>=
-# t10plot_data <- read_csv("data/Turk10/data/data-1-1-9-20-10-13-20.csv")
-#
-# counts_turk10 <- studies_sum %>%
-#   ungroup() %>%
-#   filter(study == "turk10" & pic_name == "filebab65bda535f-multiple.svg") %>%
-#   group_by(study, response_no) %>%
-#   summarize(n = sum(n))%>%
-#   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
-#   mutate(.sample_inner = response_no)
-#
-#
-# t13plot_data <- read_csv("data/Turk13/lineups/data/data-1-1-1-20-2-14-5.csv")
-#
-# counts_turk13 <- studies_sum %>%
-#   ungroup() %>%
-#   filter(study == "turk13" & pic_id == 142) %>%
-#   group_by(study, response_no) %>%
-#   summarize(n = sum(n))%>%
-#   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
-#   mutate(.sample_inner = response_no)
-#
-# counts_t6_sig <- studies_sum %>%
-#   ungroup() %>%
-#   filter(study == "turk6" & pic_id == 1047) %>%
-#   group_by(study, response_no) %>%
-#   summarize(n = sum(n))%>%
-#   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
-#   mutate(.sample = response_no)
-#
-# t6plot_data <- read_csv("data/Turk6/turk6_n100_96_1_4.csv")
-# library(beeswarm)
-#
-# t6_sig_data <- t6plot_data %>%
-# 		  split(.$.sample) %>%
-# 		  purrr::map2_dfr(., (1:length(.)) == 1, function(x, y) {
-# 		    if (y) {
-# 		      dev.new(width = 8, height = 8)
-# 		      beeswarm(formula = vals~group, data = x, add = F, do.plot = T, method = "swarm", cex = 2.5)
-# 		    }
-# 		    bs <- beeswarm(formula = vals~group, data = x, add = F, do.plot = F, method = "swarm", cex = 2.5)
-# 		    data.frame(vals = bs$y.orig, group = bs$x.orig, newy = bs$y,
-# 		               newx = bs$x, .sample = x$.sample[1])
-# 		  })
-# dev.off()
-#
-# t6_ambig_data <- read_csv("data/Turk6/turk6_60_96_1_8.csv")
-# counts_t6_ambig <- studies_sum %>%
-#   ungroup() %>%
-#   filter(study == "turk6" & pic_id == 995) %>%
-#   group_by(study, response_no) %>%
-#   summarize(n = sum(n))%>%
-#   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
-#   mutate(.sample = response_no)
-#
-# save(counts_t6_ambig, t6_ambig_data, t10plot_data, counts_turk10, t13plot_data, counts_turk13, t6_sig_data, counts_t6_sig, file = "data/turk6_13_examples.Rdata")
-load("data/turk6_13_examples.Rdata")
 @
 
 \section{Introduction}
@@ -466,20 +364,83 @@ plot_df %>%
 
 The estimated $\hat\alpha$ value can then be used either in the specification of the null model $\alpha$ ($\alpha_{M_2}$) or in the calculation of the visual p-value under the frequentist framework. Currently, in either scenario, the data used in the calculation are the target plot identifications and the sum of all null plot identifications; the individual values of the null plot identifications are not used. These data can be reclaimed to estimate a general $\alpha$ for the overall null model generation scheme, or, in an ideal situation, Rorshach lineups could be used to estimate $\alpha$ directly without any possible contamination effects induced by the presence of target plots.
 
+<<lineup-bf-data-setup, cache = F, include = F, warning = F>>=
+# t10plot_data <- read_csv("data/Turk10/data/data-2-1-1-20-2-9-18.csv")
+#
+# counts_turk10 <- studies_sum %>%
+#   ungroup() %>%
+#   filter(study == "turk10" & pic_name == "filebab6ab9fb41-multiple.svg") %>%
+#   group_by(study, response_no) %>%
+#   summarize(n = sum(n)) %>%
+#   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
+#   mutate(.sample_inner = response_no)
+#
+#
+# t13plot_data <- read_csv("data/Turk13/lineups/data/data-1-1-1-20-2-14-5.csv")
+#
+# counts_turk13 <- studies_sum %>%
+#   ungroup() %>%
+#   filter(study == "turk13" & pic_id == 142) %>%
+#   group_by(study, response_no) %>%
+#   summarize(n = sum(n))%>%
+#   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
+#   mutate(.sample_inner = response_no)
+#
+# counts_t6_sig <- studies_sum %>%
+#   ungroup() %>%
+#   filter(study == "turk6" & pic_id == 1047) %>%
+#   group_by(study, response_no) %>%
+#   summarize(n = sum(n))%>%
+#   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
+#   mutate(.sample = response_no)
+#
+# t6plot_data <- read_csv("data/Turk6/turk6_n100_96_1_4.csv")
+# library(beeswarm)
+#
+# t6_sig_data <- t6plot_data %>%
+# 		  split(.$.sample) %>%
+# 		  purrr::map2_dfr(., (1:length(.)) == 1, function(x, y) {
+# 		    if (y) {
+# 		      dev.new(width = 8, height = 8)
+# 		      beeswarm(formula = vals~group, data = x, add = F, do.plot = T, method = "swarm", cex = 2.5)
+# 		    }
+# 		    bs <- beeswarm(formula = vals~group, data = x, add = F, do.plot = F, method = "swarm", cex = 2.5)
+# 		    data.frame(vals = bs$y.orig, group = bs$x.orig, newy = bs$y,
+# 		               newx = bs$x, .sample = x$.sample[1])
+# 		  })
+# dev.off()
+#
+# t6_ambig_data <- read_csv("data/Turk6/turk6_60_96_1_8.csv")
+# counts_t6_ambig <- studies_sum %>%
+#   ungroup() %>%
+#   filter(study == "turk6" & pic_id == 995) %>%
+#   group_by(study, response_no) %>%
+#   summarize(n = sum(n))%>%
+#   mutate(bf = bf(1/2, 2, m = 20, c = n, k = sum(n))) %>%
+#   mutate(.sample = response_no)
+#
+# save(counts_t6_ambig, t6_ambig_data, t10plot_data, counts_turk10, t13plot_data, counts_turk13, t6_sig_data, counts_t6_sig, file = "data/turk6_13_examples.Rdata")
+load("data/turk6_13_examples.Rdata")
+@
+
 \section{Impact of $\hat\alpha$ Estimation}
 We have already established that the choice of $\alpha$ has a large impact on the visual p-value (\autoref{fig:vis-p-val-sensitivity-initial}), but if we use the estimation method described in the last section, how do the results change in practice? Here, we show 3 different lineups - nonsignificant, marginal, and highly significant, and examine the visual p-values computed under the binomial distribution, by simulation using the \texttt{vinference} package (with default parameter $\alpha = 1$), and according to the beta-binomial model  in \autoref{eqn:beta-binomial} with $\alpha = 1$, and finally with $\alpha = \hat\alpha$ estimated from null plot selections in the experiment which originally included the lineup in question.
-
-\autoref{fig:turk10-lineup} shows a plot which
 
 <<turk10-alpha-setup, include = F>>=
 # source("code/compute_all_ps.R")
 
 load("data/all_p_values_computed.Rdata")
+all_p_val_methods <- all_p_val_methods %>%
+  unnest_wider(p_calc)
 
-lineup_res <- filter(all_p_val_methods, study == "turk10", str_detect(pic_name, "filebab65bda535f-multiple"))$p_calc[[1]]
+lineup_info <- filter(all_p_val_methods, study == "turk10", str_detect(pic_name, "filebab6ab9fb41-multiple"))
+lineup_res <- lineup_info[,c(8, 9, 11, 7, 12)] %>% as.numeric()
 @
 
-<<turk10-lineup, fig.cap = sprintf("A lineup from \\citet{loyAreYouNormal2015} which was evaluated a total of %d times. Number of selections $c_i$ are shown at the top left of each panel. The binomial p-value for this model is %0.4f, the simulated vinference p-value is %0.4f, the multinomial p-value with $\\alpha = 1$ is %0.4f, and the multinomial p-value with $\\hat\\alpha = %0.4f$ is %0.4f", sum(counts_turk13$n), lineup_res[1], lineup_res[2], lineup_res[3], filter(all_p_val_methods, study == "turk10", str_detect(pic_name, "filebab65bda535f-multiple"))$alpha, lineup_res[4]), fig.width = 6, fig.height = 6/5*4.5, fig.align='center', out.width = ".66\\textwidth">>=
+\autoref{fig:turk10-lineup} shows a plot which was evaluated a total of \Sexpr{sum(lineup_info$data[[1]]$n)} times, with \Sexpr{with(lineup_info$data[[1]], n[obs_plot_location == response_no])} target panel selections. The target panel was selected more frequently than any other panel, but a total of 10 panels were selected, and each selected panel was chosen by 10 or more participants. In this case, we would not expect the results to reveal a statistically significant effect, because many panels were selected almost as frequently as the target panel; in fact, the binomial p-value for this model is \Sexpr{sprintf("%0.4f, the simulated vinference p-value is %0.4f, the dirichlet-multinomial p-value with $\\alpha = 1$ is %0.4f, and the dirichlet-multinomial p-value with $\\hat\\alpha = %0.4f$ is %0.4f", lineup_res[1], lineup_res[2], lineup_res[3], lineup_res[4], lineup_res[5])}. This lineup represents a case that is not handled well by the binomial model or the multinomial-dirichlet model with noninformative $\alpha = 1$ selection, but is handled reasonably by the multinomial-dirichlet model with an informative choice for $\alpha$.
+
+
+<<turk10-lineup, fig.cap = sprintf("A lineup from \\citet{loyAreYouNormal2015} which was evaluated a total of %d times. Number of selections $c_i$ are shown at the top left of each panel. The binomial p-value for this model is %0.4f, the simulated vinference p-value is %0.4f, the dirichlet-multinomial p-value with $\\alpha = 1$ is %0.4f, and the dirichlet-multinomial p-value with $\\hat\\alpha = %0.4f$ is %0.4f", sum(counts_turk10$n), lineup_res[1], lineup_res[2], lineup_res[3], lineup_res[4], lineup_res[5]), fig.width = 6, fig.height = 6/5*4.5, fig.align='center', out.width = ".66\\textwidth">>=
 t10plot_data %>%
   ggplot() +
   # geom_ribbon(aes(x = naive1.env.fit.value, ymin = naive1.env.lower, ymax = naive1.env.upper), alpha = .1) +
