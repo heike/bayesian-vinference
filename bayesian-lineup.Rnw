@@ -232,7 +232,7 @@ The data model used in \citet{majumder2013validation} assumes $\theta_t = 1/m$, 
 \begin{align}\label{eqn:beta-binomial}
 P(C\geq x) = \sum_{x = C}^{K} \binom{K}{x} \frac{1}{B(\alpha, (m-1)\alpha)}\cdot B(x+\alpha, K-x+(m-1)\alpha)
 \end{align}
-where $C$ is the number of data panel detections and $K$ is the number of independent evaluations of the lineup~\citep{vinference,vanderplas:2017,loyAreYouNormal2015}. A similar method is found in the \texttt{vinference} package, which calculates visual p-values by simulating draws of $\theta$ from a uniform distribution (which corresponds to an assumption that $\alpha=1$) but the more general solution is useful to consider, as we may not actually believe $\theta$ is uniformly distributed over the $(m - 1)$ simplex.
+where $C$ is the number of data panel detections and $K$ is the number of independent evaluations of the lineup~\citep{vinference,vanderplas:2017,loyAreYouNormal2015}. A derivation of this mass function is provided in the appendix. A similar method is found in the \texttt{vinference} package, which calculates visual p-values by simulating draws of $\theta$ from a uniform distribution (corresponding to the assumption that $\alpha=1$, as shown in \autoref{fig:simplex}) but the more general solution is useful to consider, as we may not actually believe $\theta$ is uniformly distributed over the $(m - 1)$ simplex.
 
 \subsection{Hyperparameter Selection}
 % As a result, it's important to understand the effect of $\alpha$ on the posterior distribution.
