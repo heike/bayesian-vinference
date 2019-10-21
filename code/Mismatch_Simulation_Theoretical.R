@@ -1,5 +1,6 @@
 library(vinference)
 library(tidyverse)
+library(gtools)
 
 alphas <- exp(seq(-6, 6, by = .01))
 data_breaks <- c(1:6, 10, 15, 20)
@@ -13,14 +14,23 @@ point_ests <- tibble(
 
 dist_ests <- tidyr::crossing(C = data_breaks, K = 20, m = 20, rep = 1:100) %>%
   mutate(
-  sim = purrr::pmap(list(x = C, K = K, m = m), vinference::pVsim, N = 5000, scenario = 3, upper.tail = T),
+  sim = purrr::pmap(list(x = C, K = K, m = m), vinference::pVsim, N = 1000, scenario = 3, upper.tail = T),
   sim = purrr::map(sim, ~as_tibble(.) %>%
                             select(scenario3 = simulated, binom_sim = binom))) %>%
   unnest_wider(sim)
 
-sim_dir_multinom <- function(N = 2000, m = 20, K = NULL, alpha = 1) {
+sim_dir_multinom <- function(N = 15000, m = 20, K = NULL, alpha = 1) {
   if (is.null(K)) stop("Please specify K")
-  rmultinom(N, size = K, prob = rdirichlet(n = 1, rep(alpha, m)))
+  ps <- rdirichlet(n = N, rep(alpha, m))
+  apply(ps, 1, function(i) rmultinom(n = 1, size = K, prob = as.numeric(i)))
+  # rmultinom(N, size = K, prob = rdirichlet(n = N, rep(alpha, m)))
+}
+
+p_s3_formula <- function(C, K = 20, m = 20, alpha = 1) {
+  cc <- C:K
+  sum(choose(K, cc) *
+        beta(cc + alpha, K - cc + (m - 1) * alpha) *
+        1/beta(alpha, (m - 1) * alpha))
 }
 
 b_binomial_sim <- function(x, target = 1, lower.tail = F, ...) {
@@ -32,8 +42,8 @@ b_binomial_sim <- function(x, target = 1, lower.tail = F, ...) {
     t_sel <- obs[1,]
   }
 
-  if (lower.tail)  mean(t_sel <= x)
-  else mean(t_sel > x)
+  if (lower.tail)  mean(t_sel < x)
+  else mean(t_sel >= x)
 }
 
 dist_ests2 <- tidyr::crossing(C = data_breaks, K = 20, m = 20, rep = 1:100) %>%
@@ -43,16 +53,14 @@ dist_ests2 <- tidyr::crossing(C = data_breaks, K = 20, m = 20, rep = 1:100) %>%
 alpha_ests <- tidyr::crossing(C = data_breaks, K = 20, m = 20, alphas = alphas) %>%
   mutate(p = purrr::pmap_dbl(list(C = C, K = K, alpha = alphas, m = m), vis_p_value))
 
-
-
 ggplot(alpha_ests, aes(x = alphas, y = p, color = factor(C), group = factor(C))) +
   geom_line(size = 1) +
   geom_point(aes(x = exp(6.25), y = binom, color = factor(C),
                  shape = "Binomial\np-value"), data = point_ests, size = 2) +
-  geom_jitter(aes(x = 1, y = scenario3, color = factor(C), shape = "Scenario 3\nsimulation\nvalue"),
-              data = dist_ests, alpha = .1) +
-  geom_jitter(aes(x = 1, y = scenario3, color = factor(C), shape = "BetaBinomial\nsimulation\nvalue"),
-              data = dist_ests, alpha = .1) +
+  geom_jitter(aes(x = .9, y = scenario3, color = factor(C), shape = "Scenario 3\nsimulation\nvalue"),
+              data = dist_ests, alpha = .1, width = .1) +
+  geom_jitter(aes(x = 1.1, y = val, color = factor(C), shape = "BetaBinomial\nsimulation\nvalue"),
+              data = dist_ests2, alpha = .2, width = .1) +
   scale_y_continuous("Visual p-value") +
   scale_x_continuous(expression(alpha), trans = "log10", breaks = c(0.001, 0.01, .1, 1, 10, 100),
                      labels = c("0.001", "0.01", "0.1", "1", "10", "100")) +

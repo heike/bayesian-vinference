@@ -260,7 +260,7 @@ data_breaks <- c(1:5, 6, 8, 10, 15, 20)
 pv <- tidyr::crossing(alpha = alphas, C = data_breaks, K = 20) %>%
   mutate(p = vis_p_value(C, K, alpha))
 pv2 <- tidyr::crossing(C = data_breaks, K = 20) %>%
-  mutate(p = vis_p_value_orig(C, K))
+  mutate(p = purrr::map2_dbl(C - 1, K, pbinom, prob = 1/20, lower.tail = F))
 
 ggplot(pv, aes(x = alpha, y = p, color = factor(C), group = factor(C))) +
   geom_line(size = 1) +
@@ -459,8 +459,38 @@ Return to the 3 lineups shown in Bayes Factor section, provide estimated alphas 
 \bibliographystyle{asa}
 \bibliography{references}
 
+\appendix
+\section{Derivation of Visual p-value Distribution}
+In the marginal case, where we have $K$ evaluations resulting in $C$ target plot evaluations of a $m$ plot lineup, we start with the following:
+\begin{align*}
+f(\theta | \alpha) & = \text{Beta}(\alpha, (m-1)\alpha)\\
+& = \frac{\Gamma(m\alpha)}{\Gamma(\alpha)\Gamma((m-1)\alpha)} \cdot \theta^{\alpha - 1}(1-\theta)^{(m-1)\alpha - 1}\\
+& = B\left(\alpha, (m-1)\alpha\right)\cdot \theta^{\alpha - 1}(1-\theta)^{(m-1)\alpha - 1}\\
+\\
+P(C |K, \theta) & = \text{Binomial}(C, K, \theta)\\
+& = \binom{K}{C}\theta^C(1-\theta)^{K-C}
+\end{align*}
+By Bayes Theorem, if $A_1 = C + \alpha$ and $A_2 = K - C + (m-1)\alpha$,
+\begin{align*}
+f(\theta|C, K, \alpha) &= \frac{f(\theta|\alpha) P(C | \theta)}{P(C = c)}\\
+&= \frac{B\left(\alpha, (m-1)\alpha\right)}{P(C=c)} \theta^{\alpha - 1}(1-\theta)^{(m-1)\alpha - 1}\cdot \binom{K}{C}\theta^C(1-\theta)^{K-C}\\
+&= \frac{1}{P(C=c)} B\left(\alpha, (m-1)\alpha\right) \binom{K}{C} \theta^{A_1 - 1}(1-\theta)^{A_2 - 1}\\
+\end{align*}
 
+As $f(\theta|C, K, \alpha)$ is a probability distribution, it integrates to 1. So we can infer that
+\begin{align*}
+P(C=c) &= \int B\left(\alpha, (m-1)\alpha\right) \binom{K}{C} \theta^{A_1 - 1}(1-\theta)^{A_2 - 1} d\theta\\
+& = B\left(\alpha, (m-1)\alpha\right) \binom{K}{C} \int \theta^{A_1 - 1}(1-\theta)^{X_2 - 1} d\theta\\
+& = B\left(\alpha, (m-1)\alpha\right) \binom{K}{C} \frac{B(A_1, A_2)}{B(A_1, A_2)} \int \theta^{A_1 - 1}(1-\theta)^{A_2 - 1} d\theta\\
+& =   \frac{B\left(\alpha, (m-1)\alpha\right) \binom{K}{C}}{B(A_1, A_2)\alpha)} \int B(A_1, A_2) \theta^{A_1 - 1}(1-\theta)^{A_2 - 1} d\theta\\
+& =  \frac{B\left(\alpha, (m-1)\alpha\right) \binom{K}{C} }{B\left(C+\alpha, K-C+(m-1)\alpha\right)} \\
+\end{align*}
 
+Thus, the visual p-value for a lineup with $C$ target selections out of $K$ evaluations is
+\begin{align}
+P(x \geq C) & = \sum_{x=C}^K \frac{\binom{K}{x} B(\alpha, (m-1)\alpha) }{B(x+\alpha, K-x+(m-1)\alpha)}
+\end{align}
 
+A similar derivation holds in the full Dirichlet-Multinomial model.
 \end{document}
 
