@@ -119,7 +119,7 @@ studies_alpha_est <- studies_sum %>%
   ungroup() %>%
   tidyr::spread(key = null_no, value = n) %>%
   select(-pic_id, -pic_name, -weight) %>%
-  nest(-c(study:test_param)) %>%
+  nest(data = -c(study:test_param)) %>%
   mutate(data = purrr::map(data, as.matrix),
          weight = purrr::map(data, rowSums)) %>%
   mutate(alpha = purrr::map2_dbl(data, weight, alpha.ml))
