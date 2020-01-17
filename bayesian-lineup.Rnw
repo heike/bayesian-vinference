@@ -187,8 +187,8 @@ ggtern::ggtern(aes(x = p1, y = p2, z = p3), data = simplex) +
   theme(panel.background = element_rect(colour = "black"))
 @
 
-
-<<betas, echo=FALSE, out.width='\\textwidth', fig.width=12, fig.height=4, fig.cap="Marginal Beta($\alpha, 2\alpha$) densities corresponding to \\autoref{fig:simplex}.">>=
+%Marginal Beta($\alpha, 2\alpha$) densities corresponding to \\autoref{fig:simplex}.
+<<betas, echo=FALSE, out.width='\\textwidth', fig.width=12, fig.height=4, fig.cap="Marginal Beta($\\alpha, 2\\alpha$) densities corresponding to the above Dirichlet densities.">>=
 p <- seq(0,1, by=0.005)
 alpha <- c(1/3,1,3)
 betas <- data.frame(expand.grid(p=p, alpha=alpha))

@@ -190,7 +190,7 @@ turk16_details <- read_csv("data/Turk16/data-picture-details-gini.csv") %>%
 turk16_sum <- read.csv("data/Turk16/turk16_results.csv", stringsAsFactors = F) %>%
   mutate(response = purrr::map(response_no, ~tibble(response = str_split(., ",") %>% unlist() %>% parse_number(),
                                                     weight = 1/length(response)))) %>%
-  unnest() %>%
+  unnest(cols = c(response)) %>%
   group_by(pic_id, response) %>%
   summarize(n = sum(weight)) %>%
   complete(crossing(pic_id, response = 1:20), fill = list(n = 0)) %>%
