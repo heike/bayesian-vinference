@@ -162,7 +162,9 @@ plot_df <- studies_alpha_est %>%
     # presentation = ifelse(study == "turk5", dataset, presentation),
     # dataset = ifelse(study == "turk5", tmp, dataset),
     dataset2 = as.numeric(dataset)) %>%
-  mutate(study = factor(study, levels = sprintf("turk%d", c(4, 6, 7, 5, 11, 14, 10, 13)), labels = sprintf("Study %d", 1:8), ordered = T))
+  mutate(
+    turk = study,
+    study = factor(study, levels = sprintf("turk%d", c(4, 6, 7, 5, 11, 14, 10, 13)), labels = sprintf("Study %d", 1:8), ordered = T))
 
 # plot_df %>%
 # ggplot(aes(x = param_value2, y = alpha, color = type, group = param_value)) +
